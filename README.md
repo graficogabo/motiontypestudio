@@ -22,7 +22,7 @@ A browser-based motion typography tool for creating animated text compositions w
 
 Download `MotionTypeV10.html`, open it in any modern browser. No server required.
 
-Or click here https://graficogabo.github.io/motiontypestudio/MotionTypeV10.html
+Or click here https://graficogabo.github.io/motiontypestudio/Index.html
 
 ---
 
