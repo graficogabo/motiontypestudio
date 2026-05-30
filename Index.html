@@ -1,21 +1,4 @@
 <!DOCTYPE html>
-<!--
-  MotionTypo Studio
-  Copyright (C) 2026  Grafico Gabo
-
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program. If not, see <https://www.gnu.org/licenses/>.
--->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -937,8 +920,40 @@ body {
         <button class="btn" style="background:#0a0a1a;color:#7ec8ff;border-color:#7ec8ff;" id="exportAlphaBtn">✦ WebM Alpha</button>
       </div>
       <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
-        WebM VP9 a 30fps. <strong>WebM Alpha</strong>: graba sobre un canvas con <code>alpha:true</code> usando VP9 nativo del navegador — sin ffmpeg, sin dependencias externas.<br>
-        Para composición: importar en After Effects con el plugin VP9 for AE, o convertir a ProRes 4444 con <code>ffmpeg -i input.webm -c:v prores_ks -profile:v 4444</code> en tu equipo.
+        WebM VP9 a 30fps. WebM Alpha: codifica VP9 con canal alfa real usando ffmpeg.wasm directamente en el navegador.<br>
+        <strong style="color:var(--yellow);">⚠ Nota:</strong> la primera vez descarga ~25 MB de ffmpeg.wasm. El archivo resultante es WebM con VP9 + yuva420p (transparencia real), compatible con After Effects, DaVinci Resolve y navegadores modernos.
+      </p>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">MP4</div>
+      <div style="display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px;">
+        <div>
+          <div class="f-label">FPS</div>
+          <select id="mp4Fps" class="f-select" style="width:70px;">
+            <option value="24" selected>24 fps</option>
+            <option value="30">30 fps</option>
+            <option value="60">60 fps</option>
+          </select>
+        </div>
+        <div>
+          <div class="f-label">Calidad</div>
+          <select id="mp4Quality" class="f-select" style="width:100px;">
+            <option value="high" selected>Alta</option>
+            <option value="medium">Media</option>
+            <option value="low">Baja</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-sm" id="exportMp4Btn" style="background:#1a3a1a;color:#7ec87e;border-color:#4a8a4a;">🎬 Exportar MP4</button>
+      <div id="mp4Progress" style="display:none;margin-top:6px;">
+        <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
+          <div id="mp4ProgressBar" style="height:100%;width:0%;background:#7ec87e;transition:width .1s;border-radius:2px;"></div>
+        </div>
+        <p id="mp4ProgressLabel" style="font-size:.6rem;color:var(--muted);margin-top:3px;">Procesando…</p>
+      </div>
+      <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
+        MP4 H.264 vía MediaRecorder. Chrome/Edge: MP4 nativo. Firefox/Safari: WebM renombrado a .mp4.
       </p>
     </div>
 
@@ -975,8 +990,8 @@ body {
         <p id="gifProgressLabel" style="font-size:.6rem;color:var(--muted);margin-top:3px;">Procesando…</p>
       </div>
       <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
-        GIF animado listo para web. Escala menor = archivo más liviano.<br>
-        Procesado en navegador — puede tardar unos segundos.
+        GIF animado listo para web. Soporta transparencia binaria (píxel opaco o invisible, sin semitransparencia). Escala menor = archivo más liviano.<br>
+        Procesado completamente en el navegador — sin dependencias externas.
       </p>
     </div>
 
@@ -1527,13 +1542,6 @@ function drawLineText(text, p, progress, extra, resolvedStyle, dir) {
   }
 
   // Renderizado normal: línea por línea con transform individual
-  // Rotación de usuario: pivotamos sobre el centro del bloque de texto
-  const totalTextH  = lineHeightPx * linesArr.length;
-  const blockCX     = align === 'center' ? p.x : align === 'right' ? p.x - maxTw/2 : p.x + maxTw/2;
-  const blockCY     = p.y - fs + totalTextH / 2;
-  const userRot     = p.rotation || 0;
-  if (userRot !== 0) { ctx.save(); ctx.translate(blockCX, blockCY); ctx.rotate(userRot); ctx.translate(-blockCX, -blockCY); }
-
   linesArr.forEach((line, lineIdx) => {
     const tw = lineWidths[lineIdx];
     const lineX = align === 'center' ? p.x - tw/2 : align === 'right' ? p.x - tw : p.x;
@@ -1581,7 +1589,6 @@ function drawLineText(text, p, progress, extra, resolvedStyle, dir) {
 
     ctx.restore();
   });
-  if (userRot !== 0) ctx.restore();
 
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
 }
@@ -2935,7 +2942,7 @@ document.getElementById('loadProjectInput').addEventListener('change', e => {
 // RANDOM
 // ═══════════════════════════════════════════════════
 document.getElementById('randomBtn').addEventListener('click', () => {
-  // Solo aleatoriza animaciones — nunca toca fuentes, colores, posición, tamaño ni rotación
+  // Only randomize animations — never touch fonts, colors, positions, or size
   const inStyles  = ['bounce','fadeIn','slideIn','bounceIn','zoomIn','rotateIn','backIn','splitText','scrambleText'];
   const outStyles = ['fadeOut','slideOut','bounceOut','zoomOut','rotateOut','backOut'];
   lines.forEach(l => {
@@ -4125,47 +4132,15 @@ function animate(now) {
 // Canvas click hit-test for shapes, svgs, images
 (function patchCanvasDragForObjects() {
   function hitTestObjects(cx, cy) {
+    // Check in reverse paint order (topmost first)
     for (let i = objects.length-1; i >= 0; i--) {
       const obj = objects[i];
       if (!obj.visible) continue;
       const id = obj.id;
-      const p  = getObjectParams(id);
+      const p = getObjectParams(id);
       if (!p) continue;
-
       if (obj.type === 'shape' || obj.type === 'svg' || obj.type === 'img') {
-        // Rotation-aware AABB
-        const rot = p.rotation || 0;
-        const pcx = p.x + p.w/2, pcy = p.y + p.h/2;
-        if (rot !== 0) {
-          const dx = cx-pcx, dy = cy-pcy;
-          const lx = dx*Math.cos(-rot) - dy*Math.sin(-rot);
-          const ly = dx*Math.sin(-rot) + dy*Math.cos(-rot);
-          if (Math.abs(lx) <= p.w/2 && Math.abs(ly) <= p.h/2) return {id, type: obj.type};
-        } else {
-          if (cx >= p.x && cx <= p.x+p.w && cy >= p.y && cy <= p.y+p.h) return {id, type: obj.type};
-        }
-      } else if (obj.type === 'text') {
-        const fs2  = p.fontSizePx || 44;
-        const lhPx = fs2 * (p.lineHeight || 1.2);
-        ctx.font   = `${p.fontItalic?'italic':'normal'} ${p.fontWeight||'400'} ${fs2}px ${p.fontFamily||'sans-serif'}`;
-        const rawL = String(p.text||'').split('\n');
-        const maxW2 = Math.max(...rawL.map(l => ctx.measureText(l).width), 1);
-        const al2   = p.align || 'left';
-        let bx = p.x;
-        if (al2==='center') bx = p.x - maxW2/2;
-        else if (al2==='right') bx = p.x - maxW2;
-        const totalH = lhPx * rawL.length;
-        const pad    = 8;
-        const rot    = p.rotation || 0;
-        const bbCX   = bx + maxW2/2, bbCY = p.y - fs2 + totalH/2;
-        if (rot !== 0) {
-          const dx = cx-bbCX, dy = cy-bbCY;
-          const lx = dx*Math.cos(-rot) - dy*Math.sin(-rot);
-          const ly = dx*Math.sin(-rot) + dy*Math.cos(-rot);
-          if (Math.abs(lx) <= maxW2/2+pad && Math.abs(ly) <= totalH/2+pad) return {id, type: 'text'};
-        } else {
-          if (cx>=bx-pad && cx<=bx+maxW2+pad && cy>=p.y-fs2-pad && cy<=p.y-fs2+totalH+pad) return {id, type: 'text'};
-        }
+        if (cx >= p.x && cx <= p.x+p.w && cy >= p.y && cy <= p.y+p.h) return {id, type: obj.type};
       }
     }
     return null;
@@ -4173,45 +4148,51 @@ function animate(now) {
 
   let objDrag = null, objDragOff = {x:0, y:0};
 
+  const origMouseDown = canvas.onmousedown;
   canvas.addEventListener('mousedown', e2 => {
     if (e2.button !== 0) return;
-    const r  = canvas.getBoundingClientRect();
-    const sx = canvasW/r.width, sy = canvasH/r.height;
-    const cx = (e2.clientX - r.left) * sx;
-    const cy = (e2.clientY - r.top)  * sy;
+    const { sx, sy, rect } = (() => {
+      const r = canvas.getBoundingClientRect();
+      return { sx: canvasW/r.width, sy: canvasH/r.height, rect: r };
+    })();
+    const cx = (e2.clientX - canvas.getBoundingClientRect().left) * sx;
+    const cy = (e2.clientY - canvas.getBoundingClientRect().top)  * sy;
     const hit = hitTestObjects(cx, cy);
     if (hit) {
+      // Check if locked
       const objEntry = objects.find(o => o.id === hit.id);
-      if (objEntry && objEntry.locked) { selectObject(hit.id, hit.type); e2.stopImmediatePropagation(); return; }
+      if (objEntry && objEntry.locked) {
+        // Select but don't drag
+        selectObject(hit.id, hit.type);
+        e2.stopImmediatePropagation();
+        return;
+      }
       objDrag = hit;
       const p = getObjectParams(hit.id);
       objDragOff = { x: cx - p.x, y: cy - p.y };
       selectObject(hit.id, hit.type);
       canvas.style.cursor = 'grabbing';
       e2.stopImmediatePropagation();
-    } else {
-      deselectObject();
     }
   }, true);
 
   document.addEventListener('mousemove', e2 => {
     if (!objDrag) return;
-    const r  = canvas.getBoundingClientRect();
+    const r = canvas.getBoundingClientRect();
     const sx = canvasW/r.width, sy = canvasH/r.height;
     const cx = (e2.clientX - r.left) * sx;
     const cy = (e2.clientY - r.top)  * sy;
-    const p  = getObjectParams(objDrag.id);
+    const p = getObjectParams(objDrag.id);
     if (p) {
       p.x = Math.round(cx - objDragOff.x);
       p.y = Math.round(cy - objDragOff.y);
-      const ct = document.getElementById('propsContent');
-      if (ct) {
-        const xi = ct.querySelector('.pp-x,.sp-x,.svp-x,.imp-x'); if(xi) xi.value = p.x;
-        const yi = ct.querySelector('.pp-y,.sp-y,.svp-y,.imp-y'); if(yi) yi.value = p.y;
-        const xs = ct.querySelector('.pp-x-slider'); if(xs) xs.value = Math.max(0,Math.min(canvasW,p.x));
-        const ys = ct.querySelector('.pp-y-slider'); if(ys) ys.value = Math.max(0,Math.min(canvasH,p.y));
-        const xv = ct.querySelector('.pp-x-val'); if(xv) xv.textContent = p.x+'px';
-        const yv = ct.querySelector('.pp-y-val'); if(yv) yv.textContent = p.y+'px';
+      // Sync card inputs
+      const card = document.getElementById(`card_${objDrag.id}`);
+      if (card) {
+        const cls = {shape:'.shapeX',svg:'.svgX',img:'.imgX'}[objDrag.type];
+        const clsy = {shape:'.shapeY',svg:'.svgY',img:'.imgY'}[objDrag.type];
+        if (cls) { const el=card.querySelector(cls); if(el) el.value=p.x; }
+        if (clsy) { const el=card.querySelector(clsy); if(el) el.value=p.y; }
       }
     }
     updateSelectionOverlay();
@@ -4220,20 +4201,10 @@ function animate(now) {
   document.addEventListener('mouseup', () => { if (objDrag) { objDrag=null; canvas.style.cursor='crosshair'; } });
 })();
 
-// Deseleccionar al hacer clic fuera del canvas y fuera de los paneles UI
-document.addEventListener('mousedown', e => {
-  if (selectedObjId === null) return;
-  const canvasEl    = document.getElementById('animCanvas');
-  const propsPanel  = document.getElementById('propsPanel');
-  const selOverlay  = document.getElementById('selectionOverlay');
-  const leftPanel   = document.querySelector('.left-panel');
-  const toolbar     = document.querySelector('.canvas-toolbar');
-  const inCanvas    = canvasEl   && (canvasEl.contains(e.target)   || e.target === canvasEl);
-  const inOverlay   = selOverlay && (selOverlay.contains(e.target) || e.target === selOverlay);
-  const inProps     = propsPanel && (propsPanel.contains(e.target) || e.target === propsPanel);
-  const inLeft      = leftPanel  && (leftPanel.contains(e.target)  || e.target === leftPanel);
-  const inToolbar   = toolbar    && (toolbar.contains(e.target)    || e.target === toolbar);
-  if (!inCanvas && !inOverlay && !inProps && !inLeft && !inToolbar) deselectObject();
+// Canvas click deselect
+canvas.addEventListener('click', e => {
+  // If nothing was hit (no drag started), deselect
+  // We use a small flag to detect
 });
 
 // ─── ADD SHAPE BUTTON ────────────────────────────────
@@ -4530,13 +4501,6 @@ function renderTextProps(id, content, title) {
       <button class="btn btn-xs pp-cx">⊕ Centro X</button>
       <button class="btn btn-xs pp-cy">⊕ Centro Y</button>
     </div>
-    <div class="mt4">
-      <div class="f-label">Rotación <span class="pp-rot-val" style="color:var(--accent2);">${Math.round((p.rotation||0)*180/Math.PI)}°</span></div>
-      <div class="slider-row">
-        <input type="range" class="pp-rot-slider" min="-180" max="180" value="${Math.max(-180,Math.min(180,Math.round((p.rotation||0)*180/Math.PI)))}">
-        <input type="number" class="f-input slider-num pp-rot" value="${Math.round((p.rotation||0)*180/Math.PI)}" min="-360" max="360" style="width:52px;">
-      </div>
-    </div>
   </div>
   ${animSection(p, 'text')}`;
 
@@ -4590,19 +4554,6 @@ function renderTextProps(id, content, title) {
   content.querySelector('.pp-stroke-color').addEventListener('input', e => { p.strokeColor=e.target.value; softRefresh(); });
   content.querySelector('.pp-cx').addEventListener('click', () => { p.x=Math.round(canvasW/2); const xi=content.querySelector('.pp-x'),xs=content.querySelector('.pp-x-slider'),xv=content.querySelector('.pp-x-val'); if(xi)xi.value=p.x; if(xs)xs.value=p.x; if(xv)xv.textContent=p.x+'px'; softRefresh(); updateSelectionOverlay(); });
   content.querySelector('.pp-cy').addEventListener('click', () => { p.y=Math.round(canvasH/2); const yi=content.querySelector('.pp-y'),ys=content.querySelector('.pp-y-slider'),yv=content.querySelector('.pp-y-val'); if(yi)yi.value=p.y; if(ys)ys.value=p.y; if(yv)yv.textContent=p.y+'px'; softRefresh(); updateSelectionOverlay(); });
-  // Rotation
-  const rotSlider = content.querySelector('.pp-rot-slider');
-  const rotNum    = content.querySelector('.pp-rot');
-  const rotValLbl = content.querySelector('.pp-rot-val');
-  const applyRot  = deg => {
-    p.rotation = deg * Math.PI / 180;
-    if (rotSlider) rotSlider.value = Math.max(-180, Math.min(180, deg));
-    if (rotNum)    rotNum.value    = Math.round(deg);
-    if (rotValLbl) rotValLbl.textContent = Math.round(deg) + '°';
-    softRefresh(); updateSelectionOverlay();
-  };
-  if (rotSlider) rotSlider.addEventListener('input', e => applyRot(parseInt(e.target.value)));
-  if (rotNum)    rotNum.addEventListener('input',   e => applyRot(parseFloat(e.target.value) || 0));
   wireAnimSection(content, p);
 }
 function renderShapeProps(id, content, title) {
@@ -5023,33 +4974,31 @@ function deselectObject() {
       const type = getObjectType(selectedObjId);
       if (!p) return;
 
-      // Pivot = center of bounding box in canvas coords
+      // Pivot = center of bounding box (works for text and objects)
       let pivCX, pivCY;
       if (type === 'text') {
-        const fs2  = p.fontSizePx || 44;
-        const lhPx = fs2 * (p.lineHeight || 1.2);
-        ctx.font   = `${p.fontItalic?'italic':'normal'} ${p.fontWeight||'400'} ${fs2}px ${p.fontFamily||'sans-serif'}`;
-        const rawL = String(p.text||'').split('\n');
-        const maxW2 = Math.max(...rawL.map(l => ctx.measureText(l).width), 1);
-        const nLines = rawL.length;
-        const al2   = p.align || 'left';
-        pivCX = al2 === 'center' ? p.x : al2 === 'right' ? p.x - maxW2/2 : p.x + maxW2/2;
-        pivCY = p.y - fs2 + (lhPx * nLines) / 2;
+        const bb = getBoundingBox(selectedObjId);
+        const r  = canvas.getBoundingClientRect();
+        pivCX = bb ? (bb.x + bb.w / 2) * (canvasW / r.width)  : p.x;
+        pivCY = bb ? (bb.y + bb.h / 2) * (canvasH / r.height) : p.y;
       } else {
         pivCX = p.x + (p.w || 0) / 2;
         pivCY = p.y + (p.h || 0) / 2;
       }
 
-      const mc  = toCanvas(e);
+      const mc = toCanvas(e);
       rotStart      = Math.atan2(mc.y - pivCY, mc.x - pivCX);
       startRotation = p.rotation || 0;
 
       function onRotMove(ev) {
         const p2 = getObjectParams(selectedObjId); if (!p2) return;
-        // Recalculate pivot live (text size may not change, but keep fresh)
-        let pCX = pivCX, pCY = pivCY;
-        if (type !== 'text') { pCX = p2.x+(p2.w||0)/2; pCY = p2.y+(p2.h||0)/2; }
         const mc2 = toCanvas(ev);
+        let pCX = pivCX, pCY = pivCY;
+        if (type === 'text') {
+          const bb2 = getBoundingBox(selectedObjId);
+          const r2  = canvas.getBoundingClientRect();
+          if (bb2) { pCX = (bb2.x + bb2.w/2)*(canvasW/r2.width); pCY = (bb2.y + bb2.h/2)*(canvasH/r2.height); }
+        } else { pCX = p2.x+(p2.w||0)/2; pCY = p2.y+(p2.h||0)/2; }
         const ang = Math.atan2(mc2.y - pCY, mc2.x - pCX);
         p2.rotation = startRotation + (ang - rotStart);
         softRefresh(); updateSelectionOverlay();
@@ -5339,86 +5288,284 @@ function scheduleRefresh() {
   syncNewLines();
 }
 
-// ─── GIF EXPORT ──────────────────────────────────────
-document.getElementById('exportGifBtn').addEventListener('click', async () => {
-  // Use gif.js worker-based approach via CDN
-  const fps = parseInt(document.getElementById('gifFps').value)||15;
-  const scale = parseFloat(document.getElementById('gifScale').value)||0.75;
-  const quality = parseInt(document.getElementById('gifQuality').value)||3;
-  const duration = parseFloat(document.getElementById('durationRange').value);
-  const totalFrames = Math.round(fps * duration);
+// ─── GIF EXPORT — Worker inline (sin CDN, sin bloqueo) ──────────
+// El encoder corre en un Web Worker creado como blob URL.
+// El hilo principal solo captura frames y muestra el progreso.
 
-  const progressWrap = document.getElementById('gifProgress');
-  const progressBar = document.getElementById('gifProgressBar');
+const GIF_WORKER_SRC = `
+// ── Paleta: muestreo por bucket (r>>3, g>>3, b>>3) ──────────────
+function buildPalette(frames) {
+  const buckets = new Map();
+  for (const f of frames) {
+    for (let i = 0; i < f.length; i += 4) {
+      const k = ((f[i]>>3)<<10)|((f[i+1]>>3)<<5)|(f[i+2]>>3);
+      buckets.set(k, (buckets.get(k)||0)+1);
+    }
+  }
+  const top = [...buckets.entries()].sort((a,b)=>b[1]-a[1]).slice(0,255);
+  const pal = [[0,0,0]];
+  for (const [k] of top) pal.push([(k>>10)<<3,((k>>5)&31)<<3,(k&31)<<3]);
+  while (pal.length < 256) pal.push([0,0,0]);
+  return pal;
+}
+
+// ── Lookup acelerado ─────────────────────────────────────────────
+function makeLookup(pal) {
+  const m = new Map();
+  for (let j = 1; j < pal.length; j++) {
+    const [r,g,b] = pal[j];
+    const k = ((r>>3)<<10)|((g>>3)<<5)|(b>>3);
+    if (!m.has(k)) m.set(k, j);
+  }
+  return m;
+}
+
+function quantize(frameData, lookup) {
+  const idx = new Uint8Array(frameData.length>>2);
+  for (let i=0,p=0; i<frameData.length; i+=4,p++) {
+    // Index 0 = transparent: cualquier pixel con alpha < 128
+    if (frameData[i+3] < 128) { idx[p] = 0; continue; }
+    const k = ((frameData[i]>>3)<<10)|((frameData[i+1]>>3)<<5)|(frameData[i+2]>>3);
+    idx[p] = lookup.get(k) || 1;
+  }
+  return idx;
+}
+
+// ── LZW ─────────────────────────────────────────────────────────
+function lzwEncode(idx, minCS) {
+  const cc = 1<<minCS, eof = cc+1;
+  let cs = minCS+1, nc = eof+1;
+  const out = [], table = new Map();
+  let bf2=0, bl2=0;
+  const push = (code) => {
+    bf2 |= code<<bl2; bl2+=cs;
+    while(bl2>=8){out.push(bf2&0xff);bf2>>=8;bl2-=8;}
+  };
+  const reset = () => {
+    table.clear();
+    for(let i=0;i<cc;i++) table.set(''+i,i);
+    cs=minCS+1; nc=eof+1;
+  };
+  reset(); push(cc);
+  let buf = ''+idx[0];
+  for(let i=1;i<idx.length;i++){
+    const ext = buf+','+idx[i];
+    if(table.has(ext)){ buf=ext; continue; }
+    push(table.get(buf));
+    if(nc<4096){ table.set(ext,nc++); if(nc>(1<<cs)&&cs<12)cs++; }
+    else { push(cc); reset(); }
+    buf=''+idx[i];
+  }
+  push(table.get(buf)??0);
+  push(eof);
+  if(bl2>0) out.push(bf2&0xff);
+  return out;
+}
+
+function subBlocks(data) {
+  const out=[];
+  for(let i=0;i<data.length;){
+    const len=Math.min(255,data.length-i);
+    out.push(len);
+    for(let j=0;j<len;j++) out.push(data[i++]);
+  }
+  out.push(0);
+  return out;
+}
+
+self.onmessage = function(e) {
+  const {frames, w, h, delay} = e.data;
+  const total = frames.length;
+
+  const pal    = buildPalette(frames);
+  const lookup = makeLookup(pal);
+  const palFlat= pal.flatMap(c=>c);
+
+  const buf = [];
+  const p16 = v => { buf.push(v&0xff,(v>>8)&0xff); };
+
+  // Header
+  buf.push(0x47,0x49,0x46,0x38,0x39,0x61);
+  p16(w); p16(h);
+  buf.push(0xF7,0,0);
+  buf.push(...palFlat);
+  // Netscape loop
+  buf.push(0x21,0xFF,0x0B,...[78,69,84,83,67,65,80,69,50,46,48],0x03,0x01,0x00,0x00,0x00);
+
+  for(let fi=0;fi<total;fi++){
+    const idx = quantize(frames[fi], lookup);
+    // GCE — transparent index 0, disposal = restore to background
+    buf.push(0x21,0xF9,0x04);
+    buf.push(0x09); // disposal: restore to background | transparent flag set (bit 0)
+    p16(Math.round(delay/10));
+    buf.push(0x00); // transparent color index = 0
+    buf.push(0x00); // block terminator
+    // Image descriptor
+    buf.push(0x2C); p16(0); p16(0); p16(w); p16(h); buf.push(0x00);
+    // LZW
+    buf.push(8);
+    buf.push(...subBlocks(lzwEncode(idx,8)));
+    self.postMessage({type:'progress', value:(fi+1)/total});
+  }
+
+  buf.push(0x3B);
+  self.postMessage({type:'done', buffer: new Uint8Array(buf)}, []);
+};
+`;
+
+document.getElementById('exportGifBtn').addEventListener('click', async () => {
+  const fps         = parseInt(document.getElementById('gifFps').value)     || 15;
+  const scale       = parseFloat(document.getElementById('gifScale').value) || 0.75;
+  const duration    = parseFloat(document.getElementById('durationRange').value);
+  const totalFrames = Math.round(fps * duration);
+  const delayMs     = Math.round(1000 / fps);
+
+  const progressWrap  = document.getElementById('gifProgress');
+  const progressBar   = document.getElementById('gifProgressBar');
   const progressLabel = document.getElementById('gifProgressLabel');
   progressWrap.style.display = 'block';
-  progressBar.style.width = '0%';
-  progressLabel.textContent = 'Cargando gif.js…';
+  progressBar.style.width    = '0%';
+  progressLabel.textContent  = `Capturando ${totalFrames} frames…`;
 
+  const w   = Math.round(canvasW * scale);
+  const h   = Math.round(canvasH * scale);
+  const off = document.createElement('canvas');
+  off.width = w; off.height = h;
+  const offCtx = off.getContext('2d', { alpha: true, willReadFrequently: true });
+
+  // Forzar fondo transparente para captura (el canvas principal puede tener bg sólido)
+  const prevTransparent = document.getElementById('transparentBg').checked;
+  document.getElementById('transparentBg').checked = true;
+
+  // ── 1. Capturar frames en hilo principal ──────────────────────
+  const frames = [];
+  for (let i = 0; i < totalFrames; i++) {
+    drawFrame(i / totalFrames);
+    offCtx.clearRect(0, 0, w, h);
+    offCtx.drawImage(canvas, 0, 0, w, h);
+    frames.push(new Uint8ClampedArray(offCtx.getImageData(0, 0, w, h).data));
+    progressBar.style.width   = Math.round((i / totalFrames) * 50) + '%';
+    progressLabel.textContent = `Capturando frame ${i+1} / ${totalFrames}…`;
+    if (i % 3 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  // Restaurar estado del fondo
+  document.getElementById('transparentBg').checked = prevTransparent;
+
+  // ── 2. Codificar en Worker (no bloquea UI) ────────────────────
+  progressLabel.textContent = 'Codificando GIF…';
+  progressBar.style.width   = '50%';
+
+  const blob_worker = new Blob([GIF_WORKER_SRC], { type: 'application/javascript' });
+  const workerURL   = URL.createObjectURL(blob_worker);
+  const worker      = new Worker(workerURL);
+
+  await new Promise((resolve, reject) => {
+    worker.onmessage = ev => {
+      const msg = ev.data;
+      if (msg.type === 'progress') {
+        progressBar.style.width   = Math.round(50 + msg.value * 45) + '%';
+        progressLabel.textContent = `Codificando GIF… ${Math.round(msg.value * 100)}%`;
+      } else if (msg.type === 'done') {
+        const gifBlob = new Blob([msg.buffer], { type: 'image/gif' });
+        const url     = URL.createObjectURL(gifBlob);
+        const a       = document.createElement('a');
+        a.href = url;
+        a.download = `motiontypo_${canvasW}x${canvasH}_${Date.now()}.gif`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 3000);
+        progressBar.style.width   = '100%';
+        progressLabel.textContent = `✅ GIF listo — ${(gifBlob.size/1024).toFixed(0)} KB`;
+        setTimeout(() => { progressWrap.style.display = 'none'; }, 4000);
+        showToast('🎞 GIF exportado');
+        worker.terminate();
+        URL.revokeObjectURL(workerURL);
+        startPreview();
+        resolve();
+      }
+    };
+    worker.onerror = err => {
+      progressLabel.textContent = '⚠ Error en worker: ' + err.message;
+      worker.terminate();
+      URL.revokeObjectURL(workerURL);
+      reject(err);
+    };
+    // Transferir frames al worker (zero-copy con transferables)
+    const transferable = frames.map(f => f.buffer);
+    worker.postMessage({ frames, w, h, delay: delayMs }, transferable);
+  }).catch(err => console.error('GIF encode error:', err));
+});
+
+// ─── MP4 EXPORT ──────────────────────────────────────
+document.getElementById('exportMp4Btn').addEventListener('click', async () => {
+  const fps      = parseInt(document.getElementById('mp4Fps').value) || 24;
+  const quality  = document.getElementById('mp4Quality').value || 'high';
+  const duration = parseFloat(document.getElementById('durationRange').value);
+  const totalFrames = Math.round(fps * duration);
+  const bitrate  = { high: 8_000_000, medium: 4_000_000, low: 1_500_000 }[quality];
+
+  const progressWrap  = document.getElementById('mp4Progress');
+  const progressBar   = document.getElementById('mp4ProgressBar');
+  const progressLabel = document.getElementById('mp4ProgressLabel');
+  progressWrap.style.display = 'block';
+  progressBar.style.width    = '0%';
+  progressLabel.textContent  = 'Iniciando grabación MP4…';
+
+  const mp4Mime  = 'video/mp4;codecs=avc1.42E01E';
+  const mp4Mime2 = 'video/mp4';
+  const webmMime = 'video/webm;codecs=vp9';
+  const webmMime2= 'video/webm';
+  let mimeType, isNativeMp4 = false;
+  if (MediaRecorder.isTypeSupported(mp4Mime))       { mimeType = mp4Mime;   isNativeMp4 = true; }
+  else if (MediaRecorder.isTypeSupported(mp4Mime2)) { mimeType = mp4Mime2;  isNativeMp4 = true; }
+  else if (MediaRecorder.isTypeSupported(webmMime)) { mimeType = webmMime; }
+  else { mimeType = webmMime2; }
+
+  const mp4Canvas = document.createElement('canvas');
+  mp4Canvas.width  = canvasW;
+  mp4Canvas.height = canvasH;
+  const mp4Ctx = mp4Canvas.getContext('2d');
+
+  const stream = mp4Canvas.captureStream(fps);
+  const chunks = [];
+  let recorder;
   try {
-    // Load gif.js from CDN
-    await new Promise((res, rej) => {
-      if (window.GIF) { res(); return; }
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js';
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  } catch {
-    progressLabel.textContent = '⚠ No se pudo cargar gif.js — verifica conexión.';
+    recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate });
+  } catch(e) {
+    progressLabel.textContent = '⚠ MediaRecorder no disponible: ' + e.message;
     return;
   }
 
-  const w = Math.round(canvasW * scale);
-  const h = Math.round(canvasH * scale);
-
-  // Create offscreen canvas for GIF rendering
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = w; offCanvas.height = h;
-  const offCtx = offCanvas.getContext('2d');
-
-  const gif = new window.GIF({
-    workers: 2,
-    quality: quality,
-    width: w,
-    height: h,
-    workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js',
-  });
-
-  progressLabel.textContent = `Renderizando ${totalFrames} frames…`;
-
-  // Capture frames
-  for (let i = 0; i < totalFrames; i++) {
-    const gp = i / totalFrames;
-    drawFrame(gp);
-    offCtx.clearRect(0,0,w,h);
-    offCtx.drawImage(canvas, 0, 0, w, h);
-    gif.addFrame(offCtx, {copy: true, delay: Math.round(1000/fps)});
-    progressBar.style.width = Math.round((i/totalFrames)*60) + '%';
-    if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
-  }
-
-  progressLabel.textContent = 'Compilando GIF…';
-  progressBar.style.width = '70%';
-
-  gif.on('progress', p2 => {
-    progressBar.style.width = Math.round(70 + p2*30) + '%';
-  });
-
-  gif.on('finished', blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `motiontypo_${canvasW}x${canvasH}_${Date.now()}.gif`;
-    a.click(); URL.revokeObjectURL(url);
-    progressBar.style.width = '100%';
-    progressLabel.textContent = `✅ GIF listo — ${(blob.size/1024).toFixed(0)} KB`;
-    setTimeout(() => { progressWrap.style.display='none'; }, 3000);
-    showToast('🎞 GIF exportado');
-    // Restart animation
+  recorder.ondataavailable = e => { if (e.data?.size > 0) chunks.push(e.data); };
+  recorder.onstop = () => {
+    const type = isNativeMp4 ? 'video/mp4' : 'video/webm';
+    const blob = new Blob(chunks, { type });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `motiontypo_${canvasW}x${canvasH}.mp4`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    progressBar.style.width   = '100%';
+    progressLabel.textContent = `✅ MP4 listo — ${isNativeMp4 ? 'H.264 nativo' : 'VP9 → renombrar a .webm si no abre'}`;
+    setTimeout(() => { progressWrap.style.display = 'none'; }, 4000);
+    showToast('🎬 MP4 exportado');
+    document.getElementById('exportMp4Btn').disabled = false;
     startPreview();
-  });
+  };
 
-  gif.render();
+  document.getElementById('exportMp4Btn').disabled = true;
+  recorder.start();
+  const frameDelay = 1000 / fps;
+  for (let i = 0; i < totalFrames; i++) {
+    drawFrame(i / totalFrames);
+    mp4Ctx.clearRect(0, 0, canvasW, canvasH);
+    mp4Ctx.drawImage(canvas, 0, 0);
+    progressBar.style.width   = Math.round((i / totalFrames) * 95) + '%';
+    progressLabel.textContent = `Grabando frame ${i+1} / ${totalFrames}…`;
+    await new Promise(r => setTimeout(r, frameDelay));
+  }
+  recorder.stop();
 });
 
 // ─── OVERRIDE selectLine TO USE selectObject ─────────
