@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
 <title>MotionTypo Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -621,6 +621,524 @@ body {
 }
 .modal-section.export-pane { display: none; }
 .modal-section.export-pane.active { display: block; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE LAYOUT — canvas fijo arriba (50%), módulos con tabs abajo (50%)
+   Activado en pantallas ≤ 900px
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Mobile-only elements ocultos por defecto (se muestran en @media) */
+#mobileTimelinePane,
+#mobileExportPane { display: none; }
+
+/* ─── Bottom tabs (ocultos en desktop) ────────────────────────────── */
+.mobile-tabs {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  height: 54px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.mobile-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: .56rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 7px 2px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: color .12s, background .12s;
+  position: relative;
+}
+.mobile-tab .mt-icon { font-size: 1.2rem; line-height: 1; }
+.mobile-tab .mt-label { font-weight: 500; }
+.mobile-tab.active { color: var(--accent); }
+.mobile-tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 0 0 2px 2px;
+}
+.mobile-tab:active { background: rgba(0,0,0,0.04); }
+
+/* ─── Móvil: ≤ 900px ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+
+  html, body {
+    overflow: hidden;
+    height: 100%;
+    height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Header compacto */
+  .header {
+    padding: 5px 8px !important;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .header .btn,
+  .header .btn-sm {
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: .68rem;
+  }
+
+  /* App body: ocupa todo el espacio entre header y tabs usando flex */
+  body {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .app-body {
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important; /* clave para que flex+scroll funcione */
+    height: auto !important;
+    position: relative;
+    overflow: hidden;
+    /* Espacio reservado para los tabs inferiores fijos */
+    padding-bottom: calc(54px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Wrapper interno center+right pasa a contents para que canvas y props
+     se puedan tratar como hijos directos del app-body */
+  .app-body > div[style*="flex:1"] {
+    display: contents !important;
+  }
+
+  /* ZONA SUPERIOR (50%): canvas siempre visible */
+  .right-panel {
+    position: relative !important;
+    width: 100% !important;
+    height: 50% !important;
+    flex: none !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Canvas toolbar minimal en móvil */
+  .canvas-toolbar {
+    min-height: 24px !important;
+    padding: 2px 6px !important;
+    font-size: .58rem !important;
+  }
+
+  /* Canvas wrap toma todo el espacio disponible del right-panel */
+  .canvas-wrap {
+    flex: 1 !important;
+    padding: 6px !important;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .canvas-wrap canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain;
+  }
+
+  /* Timeline-module y export-bar dentro de right-panel quedan ocultos
+     en móvil — sus controles van a la zona inferior con tabs */
+  .right-panel > .timeline-module,
+  .right-panel > .export-bar {
+    display: none !important;
+  }
+
+  /* ZONA INFERIOR (50%): módulos con tabs */
+  .left-panel,
+  .props-panel,
+  #mobileTimelinePane,
+  #mobileExportPane {
+    position: absolute !important;
+    left: 0; right: 0;
+    bottom: 0;
+    top: 50%;
+    width: 100% !important;
+    height: 50% !important;
+    max-width: none !important;
+    border: none !important;
+    border-top: 1px solid var(--border) !important;
+    z-index: 2;
+    display: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg);
+  }
+
+  /* Activación por data-mobile-active */
+  .app-body[data-mobile-active="capas"]    .left-panel,
+  .app-body[data-mobile-active="props"]    .props-panel,
+  .app-body[data-mobile-active="timeline"] #mobileTimelinePane {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  /* Mostrar tabs inferiores */
+  .mobile-tabs { display: flex !important; }
+
+  /* Resize handles ocultos */
+  .panel-resize, .props-panel-resize { display: none !important; }
+
+  /* Header del props panel sticky para que siempre se vea */
+  .props-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Panel toolbar de la left-panel: scroll horizontal en móvil */
+  .panel-toolbar {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 8px !important;
+    gap: 4px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-toolbar::-webkit-scrollbar { display: none; }
+  .panel-toolbar .btn,
+  .panel-toolbar .btn-sm {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Panel body con padding más generoso y scroll funcional */
+  .panel-body {
+    padding: 8px 10px 40px !important; /* padding-bottom extra para alcanzar el último elemento */
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0 !important;
+  }
+  /* Igual para props-body para que el último control sea alcanzable */
+  .props-body {
+    padding-bottom: 40px !important;
+  }
+
+  /* Cuando el panel está activo, scroll funcional interno
+     (display:flex viene de la regla de activación por data-mobile-active) */
+  .app-body[data-mobile-active="capas"] .left-panel,
+  .app-body[data-mobile-active="props"] .props-panel {
+    overflow: hidden !important; /* el scroll vive en los children */
+  }
+  .props-body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0 !important;
+  }
+
+  /* Botones touch-friendly */
+  .btn, .btn-sm {
+    min-height: 38px;
+    padding: 7px 12px;
+    font-size: .72rem;
+  }
+  .btn-xs { min-height: 30px; font-size: .68rem; }
+
+  /* Inputs con suficiente alto para tocar */
+  .f-input, .f-select {
+    min-height: 36px !important;
+    font-size: .82rem !important;
+  }
+  input[type="range"].f-input { min-height: 28px !important; }
+  input[type="color"].f-input { min-height: 32px !important; }
+  input[type="number"].f-input { min-width: 60px; }
+
+  /* Layer items más altos en móvil para fácil tap */
+  .layer-item {
+    padding: 8px 10px;
+    font-size: .75rem;
+  }
+  .layer-item .layer-type { font-size: .6rem; padding: 2px 5px; }
+  .layer-vis-btn, .layer-lock-btn { font-size: .9rem; padding: 4px 6px; }
+
+  /* Props sections con mejor jerarquía */
+  .props-section {
+    padding: 10px 12px !important;
+    border-bottom: 1px solid var(--border);
+  }
+  .props-section-title {
+    font-size: .68rem !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Modales fullscreen */
+  .modal-overlay { padding: 0 !important; }
+  .modal {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-title {
+    padding: 12px 14px !important;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .export-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 10px !important;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0 !important;
+    flex-shrink: 0;
+  }
+  .export-tabs::-webkit-scrollbar { display: none; }
+  .export-tab {
+    flex: 0 0 auto !important;
+    min-width: 80px;
+    white-space: nowrap;
+  }
+  .modal-section.export-pane {
+    padding: 12px 14px;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile timeline pane: controles esenciales */
+  #mobileTimelinePane {
+    padding: 12px;
+  }
+
+  /* Toast notifications en zona alta para no chocar con tabs */
+  .toast, #toast {
+    bottom: 70px !important;
+  }
+}
+
+/* ─── Tablet: 600–900px (intermedio) ─────────────────────────────── */
+@media (min-width: 600px) and (max-width: 900px) {
+  .mobile-tab .mt-label { font-size: .62rem; }
+  .right-panel { height: 55% !important; }
+  .left-panel, .props-panel, #mobileTimelinePane, #mobileExportPane {
+    top: 55% !important;
+    height: 45% !important;
+  }
+}
+
+/* ─── Móvil pequeño: < 380px ─────────────────────────────────────── */
+@media (max-width: 380px) {
+  .header { font-size: .65rem; }
+  .header .btn { padding: 3px 6px; font-size: .6rem; }
+  .mobile-tab .mt-label { font-size: .5rem; }
+}
+
+/* Touch targets para los handles del canvas en móvil */
+@media (max-width: 900px) {
+  #selectionOverlay .sel-handle {
+    width: 18px !important;
+    height: 18px !important;
+    border-width: 2px !important;
+  }
+  .sel-h-tl { left: -9px !important; top: -9px !important; }
+  .sel-h-tr { right: -9px !important; top: -9px !important; }
+  .sel-h-bl { left: -9px !important; bottom: -9px !important; }
+  .sel-h-br { right: -9px !important; bottom: -9px !important; }
+  .sel-h-tm { left: calc(50% - 9px) !important; top: -9px !important; }
+  .sel-h-bm { left: calc(50% - 9px) !important; bottom: -9px !important; }
+  .sel-h-ml { left: -9px !important; top: calc(50% - 9px) !important; }
+  .sel-h-mr { right: -9px !important; top: calc(50% - 9px) !important; }
+  .sel-rotate-handle {
+    width: 28px !important;
+    height: 28px !important;
+    top: -38px !important;
+    left: calc(50% - 14px) !important;
+    font-size: .85rem !important;
+    border-width: 2px !important;
+  }
+  /* Línea desde el bbox hasta el handle de rotación para que se vea conectado */
+  #selectionOverlay::before {
+    content: '';
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    width: 1.5px;
+    height: 22px;
+    background: rgba(42,77,110,.6);
+    pointer-events: none;
+  }
+}
+
+/* Timeline en pane móvil — handles más grandes y filas más altas */
+@media (max-width: 900px) {
+  #mtlLayersTimeline {
+    width: 100%;
+  }
+  #mtlLayersTimeline .tl-row {
+    padding: 8px 4px;
+    gap: 8px;
+    min-height: 40px;
+  }
+  #mtlLayersTimeline .tl-label {
+    font-size: .7rem;
+    min-width: 30px;
+    flex-shrink: 0;
+  }
+  #mtlLayersTimeline .tl-track {
+    min-height: 24px !important;
+    flex: 1;
+  }
+  #mtlLayersTimeline .tl-handle {
+    width: 14px !important;
+    height: 28px !important;
+    top: -2px !important;
+    touch-action: none;
+  }
+  #mtlLayersTimeline .tl-handle[data-h="0"],
+  #mtlLayersTimeline .tl-handle[data-h="3"] {
+    width: 8px !important;
+  }
+  #mtlLayersTimeline .tl-row-times {
+    font-size: .58rem !important;
+    min-width: 50px;
+    flex-shrink: 0;
+  }
+  /* Quitar el header de "Tiempos por capa" porque ya tenemos el del slot */
+  #mtlLayersTimeline + div { display: none; }
+}
+
+/* Barras de progreso de exportación */
+.exp-progress {
+  display: none;
+  margin-top: 8px;
+}
+.exp-progress.active { display: block; }
+.exp-progress-bar-bg {
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.exp-progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 3px;
+  transition: width .15s ease-out;
+  position: relative;
+}
+.exp-progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  animation: exp-progress-shimmer 1.5s infinite;
+}
+@keyframes exp-progress-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.exp-progress-bar-fill.indeterminate {
+  width: 100% !important;
+  background: linear-gradient(90deg, var(--border), var(--accent), var(--border));
+  background-size: 200% 100%;
+  animation: exp-progress-indeterminate 1.2s linear infinite;
+}
+@keyframes exp-progress-indeterminate {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.exp-progress-label {
+  font-size: .6rem;
+  color: var(--muted);
+  margin-top: 4px;
+  text-align: left;
+}
+.exp-progress-label .pct {
+  color: var(--accent2);
+  font-weight: 600;
+}
+
+/* ─── Fase 4: zoom + pan del canvas ──────────────────────────────── */
+.canvas-wrap {
+  /* permite que el canvas pueda salirse del viewport cuando hay zoom */
+  overflow: hidden;
+  touch-action: none; /* desactivar gestos por defecto del navegador (scroll/pinch) */
+}
+#canvasZoomInner {
+  /* contenedor intermedio que aplica el transform de zoom+pan */
+  transform-origin: center center;
+  transition: transform .05s linear;
+  display: inline-block;
+  will-change: transform;
+}
+#canvasZoomInner.no-anim { transition: none !important; }
+
+/* Indicador de zoom flotante */
+.zoom-indicator {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 4px 9px;
+  border-radius: 14px;
+  font-size: .65rem;
+  font-family: var(--font-mono, monospace);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+  z-index: 50;
+  letter-spacing: .04em;
+}
+.zoom-indicator.visible { opacity: 1; }
+
+/* Botón reset zoom (top right del canvas-wrap, solo si zoom != 100%) */
+.zoom-reset-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  border: none;
+  padding: 4px 9px;
+  border-radius: 4px;
+  font-size: .65rem;
+  cursor: pointer;
+  z-index: 51;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+  font-family: inherit;
+}
+.zoom-reset-btn.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.zoom-reset-btn:hover { background: rgba(0,0,0,0.85); }
 </style>
 </head>
 <body>
@@ -676,7 +1194,7 @@ body {
               <select id="extraEffect" class="f-select">
                 <option value="none">Ninguno</option>
                 <option value="shadow">Sombra</option>
-                <option value="glowStroke">Neón</option>
+                <option value="glowStroke">Neón / Glow</option>
               </select>
               <div class="mt6">
                 <label style="display:flex;align-items:center;gap:5px;font-size:.68rem;cursor:pointer;">
@@ -685,6 +1203,58 @@ body {
               </div>
             </div>
           </div>
+
+          <!-- ─── Parámetros de Sombra ─────────────────────────────── -->
+          <div id="shadowParams" class="mt6" style="display:none;border-top:1px dashed var(--border);padding-top:8px;">
+            <div class="f-label" style="font-weight:600;color:var(--accent2);">Parámetros de sombra</div>
+            <div class="row2 mt4">
+              <div>
+                <div class="f-label">Color</div>
+                <input type="color" id="shadowColor" value="#000000" class="f-input" style="width:48px;height:30px;">
+              </div>
+              <div>
+                <div class="f-label">Opacidad <span id="shadowOpacityVal" style="color:var(--accent2);">50%</span></div>
+                <input type="range" id="shadowOpacity" min="0" max="100" step="1" value="50" class="f-input">
+              </div>
+            </div>
+            <div class="row2 mt4">
+              <div>
+                <div class="f-label">Distancia X <span id="shadowDxVal" style="color:var(--accent2);">2 px</span></div>
+                <input type="range" id="shadowDx" min="-60" max="60" step="1" value="2" class="f-input">
+              </div>
+              <div>
+                <div class="f-label">Distancia Y <span id="shadowDyVal" style="color:var(--accent2);">2 px</span></div>
+                <input type="range" id="shadowDy" min="-60" max="60" step="1" value="2" class="f-input">
+              </div>
+            </div>
+            <div class="mt4">
+              <div class="f-label">Desenfoque <span id="shadowBlurVal" style="color:var(--accent2);">8 px</span></div>
+              <input type="range" id="shadowBlur" min="0" max="80" step="1" value="8" class="f-input">
+            </div>
+          </div>
+
+          <!-- ─── Parámetros de Glow ────────────────────────────────── -->
+          <div id="glowParams" class="mt6" style="display:none;border-top:1px dashed var(--border);padding-top:8px;">
+            <div class="f-label" style="font-weight:600;color:var(--accent2);">Parámetros de glow / neón</div>
+            <div class="row2 mt4">
+              <div>
+                <div class="f-label">Color</div>
+                <input type="color" id="glowColor" value="#00c6ff" class="f-input" style="width:48px;height:30px;">
+                <label style="display:flex;align-items:center;gap:4px;font-size:.62rem;margin-top:4px;cursor:pointer;">
+                  <input type="checkbox" id="glowUseFill" checked> Usar color de la capa
+                </label>
+              </div>
+              <div>
+                <div class="f-label">Intensidad <span id="glowIntensityVal" style="color:var(--accent2);">100%</span></div>
+                <input type="range" id="glowIntensity" min="0" max="200" step="5" value="100" class="f-input">
+              </div>
+            </div>
+            <div class="mt4">
+              <div class="f-label">Tamaño / radio <span id="glowSizeVal" style="color:var(--accent2);">18 px</span></div>
+              <input type="range" id="glowSize" min="0" max="80" step="1" value="18" class="f-input">
+            </div>
+          </div>
+
           <div class="mt6">
             <div class="f-label">Fuentes locales (ttf · otf · woff · woff2)</div>
             <label class="btn btn-sm" style="cursor:pointer;display:inline-flex;margin-top:3px;">
@@ -757,6 +1327,10 @@ body {
     </div>
 
     <div class="canvas-wrap">
+      <div id="canvasZoomInner">
+        <canvas id="animCanvas" width="800" height="400"></canvas>
+      </div>
+      <!-- Overlay vive FUERA del transform: usa coords pantalla, no del zoom -->
       <div id="selectionOverlay">
         <div class="sel-handle sel-h-tl" data-corner="tl"></div>
         <div class="sel-handle sel-h-tm" data-corner="tm"></div>
@@ -768,7 +1342,8 @@ body {
         <div class="sel-handle sel-h-br" data-corner="br"></div>
         <div class="sel-rotate-handle" id="selRotateHandle">↻</div>
       </div>
-      <canvas id="animCanvas" width="800" height="400"></canvas>
+      <div class="zoom-indicator" id="zoomIndicator">100%</div>
+      <button class="zoom-reset-btn" id="zoomResetBtn" title="Reset zoom">⊙ 100%</button>
     </div>
 
     <!-- TIMELINE -->
@@ -811,12 +1386,12 @@ body {
       <div class="export-group">
         <button class="btn btn-sm" id="restartBtn">⟳ Reiniciar</button>
       </div>
-      <div class="export-group">
-        <button class="btn btn-sm" style="background:#1a0a0a;color:#ff7070;border-color:#ff7070;" id="recordBtn">🎬 WebM</button>
-        <button class="btn btn-sm" style="background:#0a0a1a;color:#7ec8ff;border-color:#7ec8ff;" id="recordAlphaBtn">✦ WebM α</button>
-      </div>
       <div style="flex:1"></div>
-      <div id="statusTag" class="status-tag">⚡ Listo</div>
+      <!-- statusTag oculto pero existe para compatibilidad con código existente -->
+      <div id="statusTag" class="status-tag" style="display:none;">⚡ Listo</div>
+      <!-- recordBtn y recordAlphaBtn ocultos pero existen para compatibilidad -->
+      <button id="recordBtn" style="display:none;"></button>
+      <button id="recordAlphaBtn" style="display:none;"></button>
     </div>
   </div>
 
@@ -834,6 +1409,45 @@ body {
       </div>
       <!-- Dynamic props content injected here -->
       <div id="propsContent" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- MOBILE TIMELINE PANE (solo visible en móvil cuando tab=timeline) -->
+  <div id="mobileTimelinePane" aria-label="Controles de timeline en móvil">
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:3;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <button class="btn btn-sm" id="mtlPlayBtn" style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent);">▶ Reproducir</button>
+        <button class="btn btn-sm" id="mtlStopBtn" style="flex:0 0 auto;">⏹</button>
+        <button class="btn btn-sm" id="mtlRestartBtn" style="flex:0 0 auto;">⟳</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" id="mtlScrubber" min="0" max="1000" value="0" class="f-input" style="flex:1;">
+        <span id="mtlTimeDisplay" style="font-size:.7rem;color:var(--muted);min-width:50px;text-align:right;">0.0 / 4.0s</span>
+      </div>
+    </div>
+
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);">
+      <div class="f-label" style="margin-bottom:6px;">Duración total</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" id="mtlDurationRange" min="1" max="12" step="0.5" value="4" class="f-input" style="flex:1;">
+        <span id="mtlDurationVal" style="font-size:.75rem;min-width:40px;">4.0 s</span>
+      </div>
+    </div>
+
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);">
+      <div class="f-label" style="margin-bottom:6px;">Fases activas</div>
+      <div style="display:flex;gap:6px;" id="mtlPhasePills">
+        <span class="tl-pill pill-in active" data-phase="in" style="flex:1;text-align:center;padding:8px;">🟡 Inicio</span>
+        <span class="tl-pill pill-mid" data-phase="mid" style="flex:1;text-align:center;padding:8px;">🟢 Durante</span>
+        <span class="tl-pill pill-out active" data-phase="out" style="flex:1;text-align:center;padding:8px;">🔴 Salida</span>
+      </div>
+    </div>
+
+    <div style="padding:12px 14px;">
+      <div class="f-label" style="margin-bottom:8px;">Tiempos por capa</div>
+      <div id="mtlLayersTimeline" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- Aquí se inyecta el HTML de la timeline normal -->
+      </div>
     </div>
   </div>
 
@@ -914,45 +1528,24 @@ body {
 
     <div class="export-tabs">
       <button class="export-tab active" data-target="svg">📐 SVG</button>
-      <button class="export-tab" data-target="pptx">📊 PPTX</button>
       <button class="export-tab" data-target="webm">🎬 WebM</button>
-      <button class="export-tab" data-target="mp4">📹 MP4</button>
+      <button class="export-tab" data-target="movalpha">🎞 MOV α</button>
       <button class="export-tab" data-target="gif">🎞 GIF</button>
-      <button class="export-tab" data-target="mogrt">▶ MOGRT</button>
     </div>
 
     <div class="modal-section export-pane active" data-pane="svg">
       <div class="modal-section-title">SVG estático</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn btn-accent2" id="exportSvgBtn">⬇ Descargar SVG</button>
+        <div id="expProgress_svg" class="exp-progress">
+          <div class="exp-progress-bar-bg"><div class="exp-progress-bar-fill"></div></div>
+          <div class="exp-progress-label">Procesando…</div>
+        </div>
         <button class="btn" id="copySvgBtn">⎘ Copiar código SVG</button>
       </div>
       <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
         SVG 1.1 estándar. Compatible con Adobe Illustrator e Inkscape.<br>
         Exporta el fotograma actual de la animación.
-      </p>
-    </div>
-
-    <div class="modal-section export-pane" data-pane="pptx">
-      <div class="modal-section-title">PowerPoint (.pptx)</div>
-      <div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;">
-        <div style="flex:1;min-width:160px;">
-          <div class="f-label">Título de la diapositiva</div>
-          <input type="text" id="pptxTitle" class="f-input" value="MotionTypo Studio" placeholder="Título">
-        </div>
-        <div style="flex:1;min-width:120px;">
-          <div class="f-label">Tema</div>
-          <select id="pptxTheme" class="f-select">
-            <option value="light">Claro</option>
-            <option value="dark">Oscuro</option>
-            <option value="accent">Terracota</option>
-          </select>
-        </div>
-      </div>
-      <button class="btn btn-accent2 mt6" id="exportPptxBtn">⬇ Descargar PPTX</button>
-      <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
-        Genera una diapositiva con las posiciones y fuentes actuales.<br>
-        Los textos son editables en PowerPoint.
       </p>
     </div>
 
@@ -962,41 +1555,44 @@ body {
         <button class="btn btn-dark" id="exportVideoBtn">🎬 Grabar WebM</button>
         <button class="btn" style="background:#0a0a1a;color:#7ec8ff;border-color:#7ec8ff;" id="exportAlphaBtn">✦ WebM Alpha</button>
       </div>
+      <div id="expProgress_webm" class="exp-progress">
+        <div class="exp-progress-bar-bg"><div class="exp-progress-bar-fill"></div></div>
+        <div class="exp-progress-label">Procesando…</div>
+      </div>
       <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
         WebM VP9 a 30fps. WebM Alpha: codifica VP9 con canal alfa real usando ffmpeg.wasm directamente en el navegador.<br>
         <strong style="color:var(--yellow);">⚠ Nota:</strong> la primera vez descarga ~25 MB de ffmpeg.wasm. El archivo resultante es WebM con VP9 + yuva420p (transparencia real), compatible con After Effects, DaVinci Resolve y navegadores modernos.
       </p>
     </div>
 
-    <div class="modal-section export-pane" data-pane="mp4">
-      <div class="modal-section-title">MP4</div>
+    <div class="modal-section export-pane" data-pane="movalpha">
+      <div class="modal-section-title">QuickTime MOV con canal alpha</div>
       <div style="display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;margin-bottom:6px;">
         <div>
           <div class="f-label">FPS</div>
-          <select id="mp4Fps" class="f-select" style="width:70px;">
-            <option value="24" selected>24 fps</option>
-            <option value="30">30 fps</option>
+          <select id="movFps" class="f-select" style="width:70px;">
+            <option value="24">24 fps</option>
+            <option value="30" selected>30 fps</option>
             <option value="60">60 fps</option>
           </select>
         </div>
-        <div>
-          <div class="f-label">Calidad</div>
-          <select id="mp4Quality" class="f-select" style="width:100px;">
-            <option value="high" selected>Alta</option>
-            <option value="medium">Media</option>
-            <option value="low">Baja</option>
-          </select>
+        <div id="movEstimate" style="font-size:.65rem;color:var(--muted);align-self:center;flex:1;min-width:120px;">
+          Estimación: ~— MB
         </div>
       </div>
-      <button class="btn btn-sm" id="exportMp4Btn" style="background:#1a3a1a;color:#7ec87e;border-color:#4a8a4a;">🎬 Exportar MP4</button>
-      <div id="mp4Progress" style="display:none;margin-top:6px;">
-        <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden;">
-          <div id="mp4ProgressBar" style="height:100%;width:0%;background:#7ec87e;transition:width .1s;border-radius:2px;"></div>
-        </div>
-        <p id="mp4ProgressLabel" style="font-size:.6rem;color:var(--muted);margin-top:3px;">Procesando…</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-sm" id="exportMovAlphaBtn" style="background:#0a1a1a;color:#7effe0;border-color:#4a8a8a;">🎞 Descargar MOV α</button>
+      </div>
+      <div id="expProgress_movalpha" class="exp-progress">
+        <div class="exp-progress-bar-bg"><div class="exp-progress-bar-fill"></div></div>
+        <div class="exp-progress-label">Procesando…</div>
+      </div>
+      <div style="display:none;">
       </div>
       <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
-        MP4 H.264 vía MediaRecorder. Chrome/Edge: MP4 nativo. Firefox/Safari: WebM renombrado a .mp4.
+        QuickTime <strong>.mov</strong> con códec PNG y canal alpha real. Archivo único, sin descomprimir, importación directa por arrastre en Premiere Pro.<br>
+        <strong style="color:var(--accent3);">✓ Ventajas:</strong> alpha sin pérdida, fluido en Premiere (cada frame es PNG independiente), un solo archivo, compatible con After Effects y DaVinci.<br>
+        <strong style="color:var(--yellow);">⚠ Nota:</strong> el peso es mayor que WebM (sin compresión inter-frame), pero la calidad y rendimiento en edición son superiores.
       </p>
     </div>
 
@@ -1032,23 +1628,16 @@ body {
         </div>
         <p id="gifProgressLabel" style="font-size:.6rem;color:var(--muted);margin-top:3px;">Procesando…</p>
       </div>
+      <div id="expProgress_gif" class="exp-progress">
+        <div class="exp-progress-bar-bg"><div class="exp-progress-bar-fill"></div></div>
+        <div class="exp-progress-label">Procesando…</div>
+      </div>
       <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
         GIF animado listo para web. Soporta transparencia binaria (píxel opaco o invisible, sin semitransparencia). Escala menor = archivo más liviano.<br>
         Procesado completamente en el navegador — sin dependencias externas.
       </p>
     </div>
 
-
-    <div class="modal-section export-pane" data-pane="mogrt">
-      <div class="modal-section-title">Premiere Pro (.mogrt)</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="btn btn-sm" id="exportMogrtBtn" style="background:#1a1a3a;color:#7ec8ff;border-color:#4a6aaa;">▶ Descargar MOGRT</button>
-      </div>
-      <p style="font-size:.6rem;color:var(--muted);margin-top:5px;line-height:1.55;">
-        Motion Graphics Template para Adobe Premiere Pro. Cada capa de texto se mapea a un control editable en Essential Graphics (texto, color, fuente, posición, escala, tracking).<br>
-        <strong style="color:var(--yellow);">⚠ Nota:</strong> 3 capas por archivo. Si tienes más, se descarga un ZIP con varios .mogrt numerados. Para usarlo: arrastra el .mogrt al panel Essential Graphics de Premiere, luego arrástralo a tu secuencia.
-      </p>
-    </div>
 
     <div class="modal-actions">
       <button class="btn" id="modalCloseBtn">Cerrar</button>
@@ -1146,7 +1735,7 @@ document.getElementById('fontUpload').addEventListener('change', async e => {
       if (!customFontNames.includes(cssName)) customFontNames.push(cssName);
       const tag = document.createElement('span');
       tag.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;background:var(--tag-mid);border:1px solid rgba(74,124,89,.4);color:var(--accent3);font-size:.58rem;font-weight:600;';
-      tag.innerHTML = `${cssName} <span style="cursor:pointer;opacity:.6;" title="Quitar">✕</span>`;
+      tag.innerHTML = `${escapeHtml(cssName)} <span style="cursor:pointer;opacity:.6;" title="Quitar">✕</span>`;
       tag.querySelector('span').onclick = () => {
         customFontNames = customFontNames.filter(n=>n!==cssName);
         tag.remove();
@@ -1514,13 +2103,52 @@ function buildFillStyle(p, progress, x, y, tw, fs) {
   return grd;
 }
 
+// FIX S1/S2: escapar HTML para prevenir XSS desde nombres de archivo o fuente
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&';
 function rndChar(){return SCRAMBLE_CHARS[Math.floor(Math.random()*SCRAMBLE_CHARS.length)];}
 
+function _hexToRgba(hex, alpha) {
+  hex = (hex||'#000000').replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  const r = parseInt(hex.substring(0,2),16);
+  const g = parseInt(hex.substring(2,4),16);
+  const b = parseInt(hex.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function applyExtra(extra, fillColor) {
   ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
-  if (extra === 'shadow') { ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=8; ctx.shadowOffsetX=2; ctx.shadowOffsetY=2; }
-  else if (extra === 'glowStroke') { ctx.shadowColor=fillColor||'#00c6ff'; ctx.shadowBlur=18; }
+  if (extra === 'shadow') {
+    const c   = document.getElementById('shadowColor')?.value   || '#000000';
+    const op  = parseFloat(document.getElementById('shadowOpacity')?.value || 50) / 100;
+    const dx  = parseFloat(document.getElementById('shadowDx')?.value || 2);
+    const dy  = parseFloat(document.getElementById('shadowDy')?.value || 2);
+    const blur= parseFloat(document.getElementById('shadowBlur')?.value || 8);
+    ctx.shadowColor   = _hexToRgba(c, op);
+    ctx.shadowBlur    = blur;
+    ctx.shadowOffsetX = dx;
+    ctx.shadowOffsetY = dy;
+  }
+  else if (extra === 'glowStroke') {
+    const useFill   = document.getElementById('glowUseFill')?.checked ?? true;
+    const customCol = document.getElementById('glowColor')?.value || '#00c6ff';
+    const intensity = parseFloat(document.getElementById('glowIntensity')?.value || 100) / 100;
+    const size      = parseFloat(document.getElementById('glowSize')?.value || 18);
+    ctx.shadowColor   = useFill ? (fillColor || customCol) : customCol;
+    ctx.shadowBlur    = size * intensity;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  }
 }
 
 function drawLineText(text, p, progress, extra, resolvedStyle, dir) {
@@ -1543,6 +2171,26 @@ function drawLineText(text, p, progress, extra, resolvedStyle, dir) {
   applyExtra(extra, p.fillColor);
 
   const t = getTransform(progress, resolvedStyle, dir, 0, p);
+
+  // ── ROTACIÓN MANUAL del usuario (p.rotation) ───────────────────────
+  // Pivota sobre el CENTRO GEOMÉTRICO del bounding box del texto, no sobre
+  // el anchor (p.x, p.y), porque el anchor está en la baseline + alineación
+  // horizontal, lo que daría una rotación desde una esquina del texto.
+  const _hasUserRot = !!p.rotation;
+  if (_hasUserRot) {
+    // Calcular el centro del bbox en coords de canvas
+    const _totalH = lineHeightPx * linesArr.length;
+    let _bbLeft = p.x;
+    if (align === 'center') _bbLeft = p.x - maxTw / 2;
+    else if (align === 'right') _bbLeft = p.x - maxTw;
+    const _bbTop = p.y - fs;
+    const _cx = _bbLeft + maxTw / 2;
+    const _cy = _bbTop  + _totalH / 2;
+    ctx.save();
+    ctx.translate(_cx, _cy);
+    ctx.rotate(p.rotation);
+    ctx.translate(-_cx, -_cy);
+  }
 
   if (t.special === 'splitText') {
     linesArr.forEach((line, lineIdx) => {
@@ -1567,6 +2215,7 @@ function drawLineText(text, p, progress, extra, resolvedStyle, dir) {
       }
     });
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    if (_hasUserRot) ctx.restore();
     return;
   }
 
@@ -1593,6 +2242,7 @@ function drawLineText(text, p, progress, extra, resolvedStyle, dir) {
       }
     });
     if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    if (_hasUserRot) ctx.restore();
     return;
   }
 
@@ -1646,6 +2296,7 @@ function drawLineText(text, p, progress, extra, resolvedStyle, dir) {
   });
 
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+  if (_hasUserRot) ctx.restore();
 }
 
 function getPhaseProgress(gp, p) {
@@ -1793,6 +2444,7 @@ function startRecording(withAlpha) {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 2000);
     document.getElementById('statusTag').textContent = `✅ WebM ${canvasW}×${canvasH}`;
+    expProgressDone('webm', 'WebM descargado');
     isRecording = false;
     document.getElementById('recordBtn').disabled      = false;
     document.getElementById('recordAlphaBtn').disabled = false;
@@ -1803,6 +2455,8 @@ function startRecording(withAlpha) {
   isRecording = true;
   document.getElementById('recordBtn').disabled      = true;
   document.getElementById('recordAlphaBtn').disabled = true;
+  // Barra de progreso WebM
+  expProgressIndeterminate('webm', 'Grabando WebM...');
   document.getElementById('statusTag').textContent   = '🔴 Grabando WebM…';
 
   let frame = 0;
@@ -1850,7 +2504,8 @@ async function _encodeWebMAlphaFFmpeg(duration, FPS, totalFrames, prevChecked) {
     const chunks = [];
     let recorder;
     try {
-      recorder = new MediaRecorder(stream, { mimeType: vp9alphaMime, videoBitsPerSecond: 12_000_000 });
+      expProgressIndeterminate('webm', 'Grabando WebM α (VP9 alpha nativo)...');
+    recorder = new MediaRecorder(stream, { mimeType: vp9alphaMime, videoBitsPerSecond: 12_000_000 });
     } catch(e) {
       await _encodeWebMAlphaFallback(duration, FPS, totalFrames, prevChecked, alphaCanvas, alphaCtx);
       return;
@@ -1859,6 +2514,7 @@ async function _encodeWebMAlphaFFmpeg(duration, FPS, totalFrames, prevChecked) {
     recorder.onstop = () => {
       const blob = new Blob(chunks, { type: 'video/webm' });
       _downloadBlob(blob, `motiontypo_${canvasW}x${canvasH}_alpha.webm`);
+      expProgressDone('webm', 'WebM α descargado');
       document.getElementById('statusTag').textContent = `✅ WebM Alpha ${canvasW}×${canvasH}`;
       document.getElementById('transparentBg').checked = prevChecked;
       isRecording = false;
@@ -1889,11 +2545,13 @@ async function _encodeWebMAlphaFallback(duration, FPS, totalFrames, prevChecked,
     .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
   const stream = alphaCanvas.captureStream(FPS);
   const chunks = [];
+  expProgressIndeterminate('webm', 'Grabando WebM α (fallback)...');
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 10_000_000 });
   recorder.ondataavailable = e => { if (e.data?.size > 0) chunks.push(e.data); };
   recorder.onstop = () => {
     const blob = new Blob(chunks, { type: 'video/webm' });
     _downloadBlob(blob, `motiontypo_${canvasW}x${canvasH}_alpha.webm`);
+      expProgressDone('webm', 'WebM α descargado');
     document.getElementById('statusTag').textContent = `✅ WebM Alpha ${canvasW}×${canvasH}`;
     document.getElementById('transparentBg').checked = prevChecked;
     isRecording = false;
@@ -2004,6 +2662,7 @@ function createLineUI(id, initP) {
     lineHeight:1.2, tracking:0,
     x:Math.round(canvasW/2), y:Math.round(canvasH/2),
     align:'center',
+    rotation:0,
   };
   const p = initP ? {...def,...initP} : {...def};
 
@@ -2548,13 +3207,27 @@ function buildTlRow(lineId, p) {
 function updatePlaybackButtons() {
   const playBtn = document.getElementById('tlPlayBtn');
   const pauseBtn = document.getElementById('tlPauseBtn');
-  if (!playBtn || !pauseBtn) return;
-  if (isPlaying) {
-    playBtn.style.display = 'none';
-    pauseBtn.style.display = '';
-  } else {
-    playBtn.style.display = '';
-    pauseBtn.style.display = 'none';
+  if (playBtn && pauseBtn) {
+    if (isPlaying) {
+      playBtn.style.display = 'none';
+      pauseBtn.style.display = '';
+    } else {
+      playBtn.style.display = '';
+      pauseBtn.style.display = 'none';
+    }
+  }
+  // Sincronizar botón móvil unificado Play/Pausa
+  const mtlBtn = document.getElementById('mtlPlayBtn');
+  if (mtlBtn) {
+    if (isPlaying) {
+      mtlBtn.innerHTML = '⏸ Pausar';
+      mtlBtn.style.background = 'var(--muted)';
+      mtlBtn.style.borderColor = 'var(--muted)';
+    } else {
+      mtlBtn.innerHTML = '▶ Reproducir';
+      mtlBtn.style.background = 'var(--accent)';
+      mtlBtn.style.borderColor = 'var(--accent)';
+    }
   }
 }
 
@@ -2692,10 +3365,12 @@ function escXml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function exportSvg() {
+  expProgressShow('svg', 'Generando SVG...');
   const blob = new Blob([buildSvgString()],{type:'image/svg+xml;charset=utf-8'});
   const a = document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download='motiontypo_composicion.svg';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  expProgressDone('svg', 'SVG descargado');
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   showToast('✓ SVG descargado');
 }
@@ -2931,7 +3606,7 @@ function exportPptx() {
   showToast('✓ PPTX descargado');
 }
 
-document.getElementById('exportPptxBtn').addEventListener('click', exportPptx);
+document.getElementById('exportPptxBtn')?.addEventListener('click', exportPptx);
 
 // ═══════════════════════════════════════════════════
 // PROJECT SAVE / LOAD
@@ -3566,7 +4241,7 @@ function buildImgCard(id, p) {
   div.innerHTML = `
 <div class="card-header open" id="ch_${id}" data-obj-id="${id}">
   <span class="card-chevron open">▶</span>
-  <span class="card-title">🖼 ${p.fileName||'Imagen'} ${id}</span>
+  <span class="card-title">🖼 ${escapeHtml(p.fileName)||'Imagen'} ${id}</span>
   <button class="btn btn-xs" style="background:var(--accent);color:#fff;border-color:var(--accent);" id="del_${id}">✕</button>
 </div>
 <div class="card-body open" id="cb_${id}">
@@ -3999,13 +4674,23 @@ window.__patchedAddLine = true;
 })();
 
 function syncObjectsFromLines() {
+  // Guarda defensiva contra TDZ de 'let objects' y 'let lines':
+  // typeof no funciona en TDZ (lanza error igual), así que usamos try/catch.
+  // Si esta función se llama durante la inicialización antes de que las
+  // declaraciones se evalúen, retornamos silenciosamente — la siguiente
+  // llamada a scheduleRefresh (ya con todo inicializado) hará el sync real.
+  try {
+    objects.length; lines.length; // trigger TDZ check sin efectos
+  } catch (e) {
+    return;
+  }
   // Add any lines not yet in objects
   lines.forEach(l => {
     if (!objects.find(o => o.id === l.id)) {
       objects.push({id: l.id, type:'text', visible: true});
     }
   });
-  rebuildLayersList();
+  if (typeof rebuildLayersList === 'function') rebuildLayersList();
 }
 
 // ─── LAYERS PANEL ────────────────────────────────────
@@ -4164,6 +4849,18 @@ function updateSelectionOverlay() {
   selOverlay.style.top    = (offsetY + bb.y) + 'px';
   selOverlay.style.width  = Math.max(4, bb.w) + 'px';
   selOverlay.style.height = Math.max(4, bb.h) + 'px';
+
+  // ── Rotación del overlay siguiendo p.rotation de la capa ─────────────
+  // Pivot en el centro geométrico del bbox (mismo punto que usa el render)
+  const p = getObjectParams(selectedObjId);
+  const userRot = (p && p.rotation) ? p.rotation : 0;
+  if (userRot) {
+    selOverlay.style.transformOrigin = '50% 50%';
+    selOverlay.style.transform = 'rotate(' + userRot + 'rad)';
+  } else {
+    selOverlay.style.transform = '';
+    selOverlay.style.transformOrigin = '';
+  }
 }
 
 function hideSelectionOverlay() {
@@ -4556,6 +5253,16 @@ function renderTextProps(id, content, title) {
       <button class="btn btn-xs pp-cx">⊕ Centro X</button>
       <button class="btn btn-xs pp-cy">⊕ Centro Y</button>
     </div>
+    <div class="mt4">
+      <div class="f-label">Rotación <span class="pp-rot-val" style="color:var(--accent2);">${Math.round((p.rotation||0)*180/Math.PI)}°</span></div>
+      <div class="slider-row">
+        <input type="range" class="pp-rot-slider" min="-180" max="180" step="1" value="${Math.round((p.rotation||0)*180/Math.PI)}">
+        <input type="number" class="f-input slider-num pp-rot" min="-360" max="360" value="${Math.round((p.rotation||0)*180/Math.PI)}">
+      </div>
+      <div class="mt4">
+        <button class="btn btn-xs pp-reset-rot">⟲ Reset rotación</button>
+      </div>
+    </div>
   </div>
   ${animSection(p, 'text')}`;
 
@@ -4571,6 +5278,18 @@ function renderTextProps(id, content, title) {
   wirePair('.pp-sw-slider','.pp-stroke-width','.pp-sw-val', v=>{p.strokeWidth=v;}, v=>parseFloat(v).toFixed(1)+'px');
   wirePair('.pp-x-slider','.pp-x','.pp-x-val', v=>{p.x=Math.round(v);}, v=>Math.round(v)+'px');
   wirePair('.pp-y-slider','.pp-y','.pp-y-val', v=>{p.y=Math.round(v);}, v=>Math.round(v)+'px');
+  // Rotación texto
+  wirePair('.pp-rot-slider','.pp-rot','.pp-rot-val', v=>{p.rotation=(parseFloat(v)||0)*Math.PI/180;}, v=>Math.round(v)+'°');
+  const ppResetRot = content.querySelector('.pp-reset-rot');
+  if (ppResetRot) {
+    ppResetRot.addEventListener('click', () => {
+      p.rotation = 0;
+      const ri = content.querySelector('.pp-rot'); if (ri) ri.value = 0;
+      const rs = content.querySelector('.pp-rot-slider'); if (rs) rs.value = 0;
+      const rv = content.querySelector('.pp-rot-val'); if (rv) rv.textContent = '0°';
+      softRefresh(); updateSelectionOverlay();
+    });
+  }
   // LH: slider is ×100
   const lhSlider = content.querySelector('.pp-lh-slider'), lhNum = content.querySelector('.pp-lh'), lhVal = content.querySelector('.pp-lh-val');
   if (lhSlider && lhNum) {
@@ -5314,14 +6033,14 @@ function rebuildLayersList() {
 })();
 
 // Hook: after addLine completes, sync objects
-const _addLineSyncPatch = addLine;
-
-// We intercept by watching lines length changes
-let _prevLineCount = 0;
+// Fix: usar var (hoisted) en lugar de let para evitar TDZ cuando
+// scheduleRefresh se llama antes de que esta línea se evalúe.
+var _prevLineCount = 0;
 function syncNewLines() {
+  if (typeof lines === 'undefined') return;
   if (lines.length !== _prevLineCount) {
     _prevLineCount = lines.length;
-    syncObjectsFromLines();
+    if (typeof syncObjectsFromLines === 'function') syncObjectsFromLines();
   }
 }
 
@@ -5469,6 +6188,7 @@ self.onmessage = function(e) {
 `;
 
 document.getElementById('exportGifBtn').addEventListener('click', async () => {
+  expProgressShow('gif', 'Iniciando GIF...');
   const fps         = parseInt(document.getElementById('gifFps').value)     || 15;
   const scale       = parseFloat(document.getElementById('gifScale').value) || 0.75;
   const duration    = parseFloat(document.getElementById('durationRange').value);
@@ -5545,14 +6265,25 @@ document.getElementById('exportGifBtn').addEventListener('click', async () => {
       URL.revokeObjectURL(workerURL);
       reject(err);
     };
+    // FIX M3: añadir onmessageerror (el original ya tenía onerror)
+    worker.onmessageerror = (err) => {
+      progressLabel.textContent = '⚠ Error de mensaje del worker';
+      try { worker.terminate(); } catch(e) {}
+      URL.revokeObjectURL(workerURL);
+      reject(err);
+    };
     // Transferir frames al worker (zero-copy con transferables)
     const transferable = frames.map(f => f.buffer);
     worker.postMessage({ frames, w, h, delay: delayMs }, transferable);
-  }).catch(err => console.error('GIF encode error:', err));
+  }).catch(err => {
+    // Si algo falló antes del done, asegurar revocación del workerURL
+    try { URL.revokeObjectURL(workerURL); } catch(e) {}
+    console.error('GIF encode error:', err);
+  });
 });
 
 // ─── MP4 EXPORT ──────────────────────────────────────
-document.getElementById('exportMp4Btn').addEventListener('click', async () => {
+document.getElementById('exportMp4Btn')?.addEventListener('click', async () => {
   const fps      = parseInt(document.getElementById('mp4Fps').value) || 24;
   const quality  = document.getElementById('mp4Quality').value || 'high';
   const duration = parseFloat(document.getElementById('durationRange').value);
@@ -5651,340 +6382,7 @@ setTimeout(() => {
 
 </script>
 
-<script>
-// ═══════════════════════════════════════════════════
-// MOGRT EXPORT — Premiere Pro / Essential Graphics
-// ═══════════════════════════════════════════════════
-// Genera .mogrt files parcheando una plantilla Title_01 embebida en base64.
-// Cada mogrt expone 3 slots de texto editables (A, B, C) con color, fuente,
-// posición, escala y tracking. Si hay más de 3 capas, genera múltiples mogrts
-// empaquetados en un único ZIP.
 
-const TITLE01_MOGRT_B64 = "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";
-
-// IDs de los controles dentro de definition.json
-const MOGRT_SLOTS = [
-  {
-    text:     '0408bee6-9fe7-404e-97e8-405033b6297d', // Text A
-    color:    'cc2d559a-a4a9-4b99-a6bc-c1eddd8f398e', // Text A color
-    position: 'b5905cc5-0aef-4cd8-a1cc-b45dd1462e63', // Text A position
-    scale:    '2e3dc4e4-0205-4922-a49d-5470bce6b999', // Text A scale
-    tracking: 'a986366a-0b06-4f2f-9a75-bce7d6964247', // Text A tracking
-  },
-  {
-    text:     '5e45805b-7f48-4fdd-aa0a-d552b5f0a74b', // Text B
-    color:    'd2992326-e081-4188-bfc4-ecfc966fde2f', // Text B color
-    position: 'a464b348-22a9-47ab-b5a7-5d5f394f9f7f', // Text B position
-    scale:    'd72fab41-a22f-4684-a661-3b6d9f121df4', // Text B scale
-    tracking: '8d3ce261-43fa-49f3-8cfd-f8624f533459', // Text B tracking
-  },
-  {
-    text:     '8748fc59-c83f-4966-a46b-9e100e474ed8', // Text C
-    color:    'fb688e6a-bc39-43d3-81de-97843e9b0ec2', // Text C color
-    position: 'c89a32e1-1274-4ffc-a597-8413166b4d13', // Text C position
-    scale:    '49ac0844-a8c5-4702-96f8-91efa176d324', // Text C scale
-    tracking: 'dc771a81-64cc-4108-b2f1-9d383a5b8a81', // Text C tracking
-  }
-];
-
-// ── ZIP helpers (mismas funciones que en exportPptx) ─────────────────────────
-function _mogrt_str2u8(s) { return new TextEncoder().encode(s); }
-function _mogrt_crc32(u8) {
-  const t = new Uint32Array(256);
-  for (let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[i]=c;}
-  let crc=0xFFFFFFFF;
-  for (let i=0;i<u8.length;i++) crc=t[(crc^u8[i])&0xFF]^(crc>>>8);
-  return (crc^0xFFFFFFFF)>>>0;
-}
-function _mogrt_w16(v){ return new Uint8Array([v&0xFF,(v>>8)&0xFF]); }
-function _mogrt_w32(v){ return new Uint8Array([v&0xFF,(v>>8)&0xFF,(v>>16)&0xFF,(v>>24)&0xFF]); }
-function _mogrt_cat(...arrays) {
-  const total = arrays.reduce((s,a)=>s+a.length,0);
-  const out = new Uint8Array(total);
-  let pos=0; for(const a of arrays){out.set(a,pos);pos+=a.length;}
-  return out;
-}
-function _mogrt_buildZip(files) {
-  const localParts = [], cdParts = [];
-  let offset = 0;
-  files.forEach(({name, data}) => {
-    const nb  = _mogrt_str2u8(name);
-    const crc = _mogrt_crc32(data);
-    const lh = _mogrt_cat(
-      new Uint8Array([0x50,0x4B,0x03,0x04]),
-      _mogrt_w16(20), _mogrt_w16(0), _mogrt_w16(0),
-      _mogrt_w16(0), _mogrt_w16(0),
-      _mogrt_w32(crc),
-      _mogrt_w32(data.length), _mogrt_w32(data.length),
-      _mogrt_w16(nb.length), _mogrt_w16(0),
-      nb
-    );
-    localParts.push(lh, data);
-    const cd = _mogrt_cat(
-      new Uint8Array([0x50,0x4B,0x01,0x02]),
-      _mogrt_w16(20), _mogrt_w16(20),
-      _mogrt_w16(0), _mogrt_w16(0),
-      _mogrt_w16(0), _mogrt_w16(0),
-      _mogrt_w32(crc),
-      _mogrt_w32(data.length), _mogrt_w32(data.length),
-      _mogrt_w16(nb.length), _mogrt_w16(0), _mogrt_w16(0),
-      _mogrt_w16(0), _mogrt_w16(0),
-      new Uint8Array([0x20,0x00,0x00,0x00]),
-      _mogrt_w32(offset),
-      nb
-    );
-    cdParts.push(cd);
-    offset += lh.length + data.length;
-  });
-  const localData = _mogrt_cat(...localParts);
-  const cdData    = _mogrt_cat(...cdParts);
-  const cdStart   = localData.length;
-  const eocd = _mogrt_cat(
-    new Uint8Array([0x50,0x4B,0x05,0x06]),
-    _mogrt_w16(0), _mogrt_w16(0),
-    _mogrt_w16(files.length), _mogrt_w16(files.length),
-    _mogrt_w32(cdData.length),
-    _mogrt_w32(cdStart),
-    _mogrt_w16(0)
-  );
-  return _mogrt_cat(localData, cdData, eocd);
-}
-
-// ── ZIP reader minimal (para extraer definition.json del template) ──────────
-function _mogrt_readZip(u8) {
-  // Buscar EOCD (End of Central Directory) desde el final
-  let eocdOffset = -1;
-  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
-    if (u8[i]===0x50 && u8[i+1]===0x4B && u8[i+2]===0x05 && u8[i+3]===0x06) {
-      eocdOffset = i; break;
-    }
-  }
-  if (eocdOffset < 0) throw new Error('EOCD no encontrado');
-
-  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
-  const totalEntries = dv.getUint16(eocdOffset + 10, true);
-  const cdOffset     = dv.getUint32(eocdOffset + 16, true);
-
-  const files = {};
-  let p = cdOffset;
-  for (let i = 0; i < totalEntries; i++) {
-    // Central directory entry
-    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('CD sig inválida');
-    const compression  = dv.getUint16(p + 10, true);
-    const compSize     = dv.getUint32(p + 20, true);
-    const uncompSize   = dv.getUint32(p + 24, true);
-    const nameLen      = dv.getUint16(p + 28, true);
-    const extraLen     = dv.getUint16(p + 30, true);
-    const commentLen   = dv.getUint16(p + 32, true);
-    const localOffset  = dv.getUint32(p + 42, true);
-    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nameLen));
-
-    // Local file header
-    const lh = localOffset;
-    if (dv.getUint32(lh, true) !== 0x04034b50) throw new Error('LH sig inválida');
-    const lhNameLen  = dv.getUint16(lh + 26, true);
-    const lhExtraLen = dv.getUint16(lh + 28, true);
-    const dataStart  = lh + 30 + lhNameLen + lhExtraLen;
-    const rawData    = u8.subarray(dataStart, dataStart + compSize);
-
-    if (compression === 0) {
-      // STORED
-      files[name] = rawData;
-    } else if (compression === 8) {
-      // DEFLATE — usar DecompressionStream (disponible en navegadores modernos)
-      files[name] = { compressed: rawData, uncompSize };
-    } else {
-      throw new Error(`Compresión no soportada: ${compression}`);
-    }
-
-    p += 46 + nameLen + extraLen + commentLen;
-  }
-  return files;
-}
-
-async function _mogrt_inflate(compressedU8) {
-  const ds = new DecompressionStream('deflate-raw');
-  const stream = new Blob([compressedU8]).stream().pipeThrough(ds);
-  const buf = await new Response(stream).arrayBuffer();
-  return new Uint8Array(buf);
-}
-
-// ── base64 → Uint8Array ──────────────────────────────────────────────────────
-function _mogrt_b64ToU8(b64) {
-  const bin = atob(b64);
-  const u8 = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-  return u8;
-}
-
-// ── Color helpers ────────────────────────────────────────────────────────────
-function _mogrt_hexToRGBA(hex) {
-  hex = (hex || '#ffffff').replace('#','');
-  if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
-  return [
-    parseInt(hex.substring(0,2),16) / 255,
-    parseInt(hex.substring(2,4),16) / 255,
-    parseInt(hex.substring(4,6),16) / 255,
-    1.0
-  ];
-}
-
-// ── Patch del definition.json con datos de capas ─────────────────────────────
-function _mogrt_patchDefinition(defJson, layers, mogrtIndex, totalMogrts, canvasW, canvasH) {
-  const def = JSON.parse(defJson);
-
-  // Renombrar el capsule para identificarlo en Premiere
-  const capsuleName = totalMogrts > 1
-    ? `MotionTypo ${mogrtIndex + 1}/${totalMogrts}`
-    : 'MotionTypo';
-  def.capsuleName = capsuleName;
-  if (def.capsuleNameLocalized && def.capsuleNameLocalized.strDB) {
-    def.capsuleNameLocalized.strDB.forEach(e => { e.str = capsuleName; });
-  }
-
-  // Para cada slot (A, B, C), parchar con la capa correspondiente o vaciarlo
-  for (let slotIdx = 0; slotIdx < 3; slotIdx++) {
-    const layer = layers[slotIdx];
-    const slot  = MOGRT_SLOTS[slotIdx];
-
-    // Localizar cada control por id
-    for (const ctrl of def.clientControls) {
-      if (!ctrl.id) continue;
-
-      if (ctrl.id === slot.text) {
-        // Texto
-        const text = layer ? String(layer.text || '') : '';
-        if (ctrl.value && ctrl.value.strDB) {
-          ctrl.value.strDB.forEach(e => { e.str = text; });
-        }
-        // Fuente — si la capa tiene fontFamily, intentar mapear
-        if (layer && layer.fontFamily && ctrl.fonteditinfo) {
-          // Premiere espera nombres tipo "Inter-Bold" o "Arial-Regular"
-          // pero también acepta nombres normales. Usamos la familia tal cual.
-          ctrl.fonteditinfo.fontEditValue = layer.fontFamily;
-          // Bold flag basado en fontWeight
-          const w = parseInt(layer.fontWeight || '400', 10);
-          ctrl.fonteditinfo.fontFSBoldValue = w >= 600;
-          ctrl.fonteditinfo.fontFSItalicValue = !!layer.fontItalic;
-        }
-      }
-      else if (ctrl.id === slot.color) {
-        // Color
-        if (layer) ctrl.value = _mogrt_hexToRGBA(layer.fillColor);
-      }
-      else if (ctrl.id === slot.position) {
-        // Posición relativa al centro del canvas
-        if (layer) {
-          const cx = canvasW / 2, cy = canvasH / 2;
-          ctrl.value = {
-            x: Math.round((layer.x || cx) - cx),
-            y: Math.round((layer.y || cy) - cy)
-          };
-        }
-      }
-      else if (ctrl.id === slot.scale) {
-        // Escala como % basada en fontSizePx vs 100px referencia
-        if (layer) {
-          const fs = layer.fontSizePx || 44;
-          ctrl.value = Math.round((fs / 100) * 100);
-        }
-      }
-      else if (ctrl.id === slot.tracking) {
-        if (layer) ctrl.value = Math.round(layer.tracking || 0);
-      }
-    }
-  }
-
-  return JSON.stringify(def);
-}
-
-// ── Generar un .mogrt parcheado ──────────────────────────────────────────────
-async function _mogrt_buildOne(layers, mogrtIndex, totalMogrts, canvasW, canvasH) {
-  const baseU8 = _mogrt_b64ToU8(TITLE01_MOGRT_B64);
-  const entries = _mogrt_readZip(baseU8);
-
-  // Descomprimir cada entrada
-  const decoded = {};
-  for (const name of Object.keys(entries)) {
-    const entry = entries[name];
-    if (entry instanceof Uint8Array) {
-      decoded[name] = entry;
-    } else {
-      decoded[name] = await _mogrt_inflate(entry.compressed);
-    }
-  }
-
-  // Parchar definition.json
-  const defText = new TextDecoder().decode(decoded['definition.json']);
-  const patchedDef = _mogrt_patchDefinition(defText, layers, mogrtIndex, totalMogrts, canvasW, canvasH);
-  decoded['definition.json'] = _mogrt_str2u8(patchedDef);
-
-  // Reempaquetar como ZIP STORED
-  const files = Object.keys(decoded).map(name => ({ name, data: decoded[name] }));
-  return _mogrt_buildZip(files);
-}
-
-// ── Función pública: exportToMogrt ───────────────────────────────────────────
-async function exportToMogrt() {
-  try {
-    // Recolectar capas de texto desde la variable global `lines`
-    const textLayers = lines
-      .filter(l => l.params && typeof l.params.text === 'string')
-      .map(l => l.params);
-
-    if (textLayers.length === 0) {
-      showToast('⚠ No hay capas de texto para exportar');
-      return;
-    }
-
-    showToast('Generando .mogrt…');
-
-    // Dividir en grupos de 3
-    const groups = [];
-    for (let i = 0; i < textLayers.length; i += 3) {
-      groups.push(textLayers.slice(i, i + 3));
-    }
-    const totalMogrts = groups.length;
-
-    // Generar cada mogrt
-    const mogrts = [];
-    for (let i = 0; i < groups.length; i++) {
-      const data = await _mogrt_buildOne(groups[i], i, totalMogrts, canvasW, canvasH);
-      mogrts.push({ name: totalMogrts === 1 ? 'MotionTypo.mogrt' : `MotionTypo_${i+1}.mogrt`, data });
-    }
-
-    if (totalMogrts === 1) {
-      // Descargar directamente
-      const blob = new Blob([mogrts[0].data], { type: 'application/octet-stream' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = mogrts[0].name;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      showToast(`✓ ${mogrts[0].name} descargado`);
-    } else {
-      // Empaquetar en un ZIP
-      const zipData = _mogrt_buildZip(mogrts);
-      const blob = new Blob([zipData], { type: 'application/zip' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'MotionTypo_mogrts.zip';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      showToast(`✓ ${totalMogrts} .mogrt empaquetados en ZIP`);
-    }
-  } catch (e) {
-    console.error('exportToMogrt error:', e);
-    showToast('Error: ' + (e.message || e));
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('exportMogrtBtn');
-  if (btn) btn.addEventListener('click', exportToMogrt);
-});
-
-</script>
 
 <script>
 // Export modal — tab switching
@@ -5999,6 +6397,1216 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+</script>
+
+<!-- MOBILE BOTTOM TABS -->
+<nav class="mobile-tabs" id="mobileTabs" aria-label="Navegación móvil">
+  <button class="mobile-tab active" data-mobile-target="capas" aria-label="Capas y configuración">
+    <span class="mt-icon">⊞</span>
+    <span class="mt-label">Capas</span>
+  </button>
+  <button class="mobile-tab" data-mobile-target="props" aria-label="Propiedades de capa">
+    <span class="mt-icon">⚙</span>
+    <span class="mt-label">Props</span>
+  </button>
+  <button class="mobile-tab" data-mobile-target="timeline" aria-label="Timeline y animación">
+    <span class="mt-icon">⏱</span>
+    <span class="mt-label">Tiempo</span>
+  </button>
+  <button class="mobile-tab" data-mobile-target="export" aria-label="Exportar">
+    <span class="mt-icon">⬆</span>
+    <span class="mt-label">Exportar</span>
+  </button>
+</nav>
+
+<script>
+// MOBILE BOTTOM TABS — switching entre paneles en pantallas pequeñas
+(function() {
+  const appBody = document.querySelector('.app-body');
+  const tabs    = document.querySelectorAll('.mobile-tab');
+  const modal   = document.getElementById('exportModal');
+
+  // Inicializar con "capas" activo (canvas siempre visible arriba)
+  if (appBody && !appBody.dataset.mobileActive) {
+    appBody.dataset.mobileActive = 'capas';
+  }
+
+  function closeModal() {
+    if (modal) modal.classList.remove('open');
+  }
+
+  function activateTab(target) {
+    // Limpiar visualmente todos los tabs
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.mobileTarget === target));
+
+    if (target === 'export') {
+      // Abrir modal de exportar (no cambia el pane visible debajo del canvas)
+      if (modal) modal.classList.add('open');
+      if (typeof refreshSequenceInfo === 'function') {
+        setTimeout(refreshSequenceInfo, 200);
+      }
+    } else {
+      // Cerrar modal si estaba abierto y cambiar pane
+      closeModal();
+      const previousActive = appBody?.dataset.mobileActive;
+      if (appBody) appBody.dataset.mobileActive = target;
+
+      // Si salimos del timeline, devolver el tlRows a su lugar original
+      if (previousActive === 'timeline' && target !== 'timeline') {
+        restoreTlRowsToDesktop();
+      }
+      // Si entramos a timeline, mover, sincronizar y arrancar polling
+      if (target === 'timeline') {
+        syncMobileTimeline();
+        _startMobileTimelineSync();
+      } else {
+        _stopMobileTimelineSync();
+      }
+    }
+
+    // Forzar refresh del canvas porque al cambiar layout puede haberse recalculado
+    if (typeof scheduleRefresh === 'function') {
+      setTimeout(scheduleRefresh, 50);
+    }
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => activateTab(tab.dataset.mobileTarget));
+  });
+
+  // Cerrar modal manualmente vuelve a marcar el tab anterior
+  ['modalClose', 'modalCloseBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const active = appBody ? appBody.dataset.mobileActive : 'capas';
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.mobileTarget === active));
+    });
+  });
+
+  // Si el usuario cierra el modal tocando el overlay
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        const active = appBody ? appBody.dataset.mobileActive : 'capas';
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.mobileTarget === active));
+      }
+    });
+  }
+
+  // ── Sincronización de controles móviles ⇄ desktop ─────────────────
+  function syncMobileTimeline() {
+    // Duración
+    const desktopDur = document.getElementById('durationRange');
+    const mobileDur  = document.getElementById('mtlDurationRange');
+    const mobileDurVal = document.getElementById('mtlDurationVal');
+    if (desktopDur && mobileDur) {
+      mobileDur.value = desktopDur.value;
+      if (mobileDurVal) mobileDurVal.textContent = parseFloat(desktopDur.value).toFixed(1) + ' s';
+    }
+
+    // Scrubber
+    const desktopScrub = document.getElementById('tlScrubber');
+    const mobileScrub  = document.getElementById('mtlScrubber');
+    if (desktopScrub && mobileScrub) {
+      mobileScrub.value = desktopScrub.value;
+    }
+
+    // Pills (fases activas)
+    const desktopPills = document.querySelectorAll('#tlPills .tl-pill');
+    const mobilePills  = document.querySelectorAll('#mtlPhasePills .tl-pill');
+    desktopPills.forEach(dp => {
+      const phase = dp.dataset.phase;
+      mobilePills.forEach(mp => {
+        if (mp.dataset.phase === phase) {
+          mp.classList.toggle('active', dp.classList.contains('active'));
+        }
+      });
+    });
+
+    // Mover el tlRows real al pane móvil (no clonar — preservar listeners)
+    moveTlRowsToMobile();
+  }
+
+  // ── Movimiento del nodo tlRows entre desktop y móvil ─────────────
+  // Guardamos referencia al parent original para poder restaurarlo
+  let _tlRowsOriginalParent = null;
+  let _tlRowsOriginalNextSibling = null;
+  function moveTlRowsToMobile() {
+    const tlRows = document.getElementById('tlRows');
+    const mobileSlot = document.getElementById('mtlLayersTimeline');
+    if (!tlRows || !mobileSlot) return;
+    if (tlRows.parentElement === mobileSlot) return; // ya está ahí
+    // Guardar ubicación original
+    _tlRowsOriginalParent = tlRows.parentElement;
+    _tlRowsOriginalNextSibling = tlRows.nextSibling;
+    // Limpiar el slot móvil y mover
+    mobileSlot.innerHTML = '';
+    mobileSlot.appendChild(tlRows);
+    tlRows.style.cssText = 'display:flex;flex-direction:column;gap:6px;width:100%;';
+  }
+  function restoreTlRowsToDesktop() {
+    const tlRows = document.getElementById('tlRows');
+    if (!tlRows || !_tlRowsOriginalParent) return;
+    if (tlRows.parentElement === _tlRowsOriginalParent) return;
+    if (_tlRowsOriginalNextSibling && _tlRowsOriginalNextSibling.parentElement === _tlRowsOriginalParent) {
+      _tlRowsOriginalParent.insertBefore(tlRows, _tlRowsOriginalNextSibling);
+    } else {
+      _tlRowsOriginalParent.appendChild(tlRows);
+    }
+    tlRows.style.cssText = ''; // reset estilos inline que pusimos para móvil
+  }
+
+  // Listeners de los controles móviles delegando al desktop
+  document.getElementById('mtlPlayBtn')?.addEventListener('click', () => {
+    // Botón unificado: dispara play o pause según estado actual
+    if (typeof isPlaying !== 'undefined' && isPlaying) {
+      document.getElementById('tlPauseBtn')?.click();
+    } else {
+      document.getElementById('tlPlayBtn')?.click();
+    }
+  });
+  document.getElementById('mtlStopBtn')?.addEventListener('click', () => {
+    document.getElementById('tlStopBtn')?.click();
+  });
+  document.getElementById('mtlRestartBtn')?.addEventListener('click', () => {
+    document.getElementById('restartBtn')?.click();
+  });
+  document.getElementById('mtlScrubber')?.addEventListener('input', (e) => {
+    const desktopScrub = document.getElementById('tlScrubber');
+    if (desktopScrub) {
+      desktopScrub.value = e.target.value;
+      desktopScrub.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+  document.getElementById('mtlDurationRange')?.addEventListener('input', (e) => {
+    const desktopDur = document.getElementById('durationRange');
+    if (desktopDur) {
+      desktopDur.value = e.target.value;
+      desktopDur.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    const mobileDurVal = document.getElementById('mtlDurationVal');
+    if (mobileDurVal) mobileDurVal.textContent = parseFloat(e.target.value).toFixed(1) + ' s';
+  });
+  // Pills móviles
+  document.querySelectorAll('#mtlPhasePills .tl-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const phase = pill.dataset.phase;
+      const desktopPill = document.querySelector('#tlPills .tl-pill[data-phase="' + phase + '"]');
+      if (desktopPill) desktopPill.click();
+      pill.classList.toggle('active', desktopPill?.classList.contains('active'));
+    });
+  });
+
+  // Re-evaluar layout cuando se rota el dispositivo
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (typeof scheduleRefresh === 'function') scheduleRefresh();
+      // Si pasamos a viewport desktop pero el tlRows está en el slot móvil, restaurarlo
+      if (window.innerWidth > 900) {
+        restoreTlRowsToDesktop();
+      }
+    }, 150);
+  });
+
+  // FIX P1: sync de tiempo solo cuando estamos en tab timeline en móvil.
+  // Antes corría siempre cada 100ms (1080 ticks/s = trabajo innecesario en desktop).
+  // Ahora arranca al entrar a la tab y se detiene al salir.
+  let _mtlSyncInterval = null;
+  function _startMobileTimelineSync() {
+    if (_mtlSyncInterval) return;
+    _mtlSyncInterval = setInterval(() => {
+      if (appBody?.dataset.mobileActive !== 'timeline') {
+        // safety net: si por alguna razón el flag no se activó al cambiar de tab
+        _stopMobileTimelineSync();
+        return;
+      }
+      const desktopScrub = document.getElementById('tlScrubber');
+      const mobileScrub  = document.getElementById('mtlScrubber');
+      const desktopDur   = document.getElementById('durationRange');
+      const display      = document.getElementById('mtlTimeDisplay');
+      if (desktopScrub && mobileScrub && desktopScrub.value !== mobileScrub.value) {
+        mobileScrub.value = desktopScrub.value;
+      }
+      if (display && desktopDur) {
+        const total = parseFloat(desktopDur.value);
+        const cur   = (parseInt(desktopScrub?.value || 0, 10) / 1000) * total;
+        display.textContent = cur.toFixed(1) + ' / ' + total.toFixed(1) + 's';
+      }
+    }, 100);
+  }
+  function _stopMobileTimelineSync() {
+    if (_mtlSyncInterval) {
+      clearInterval(_mtlSyncInterval);
+      _mtlSyncInterval = null;
+    }
+  }
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// TOUCH → MOUSE polyfill para handles del canvas (rotación, escala, drag)
+// Convierte eventos táctiles del selectionOverlay y del canvas en mouse
+// events que la lógica de drag/rotación existente ya sabe procesar.
+// ═══════════════════════════════════════════════════════════════════════
+(function() {
+  function fireMouse(type, touch, target) {
+    const evt = new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      button: 0,
+      buttons: type === 'mouseup' ? 0 : 1,
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      screenX: touch.screenX,
+      screenY: touch.screenY
+    });
+    (target || touch.target).dispatchEvent(evt);
+  }
+
+  // Cuando el dedo toca un handle del overlay o el canvas, generamos mousedown
+  // y los siguientes touchmove/touchend en cualquier parte del documento se
+  // convierten en mousemove/mouseup hasta que se suelta.
+  let activeTouchId = null;
+  let touchTarget   = null;
+
+  function onTouchStart(e) {
+    // Solo capturar el primer dedo (no multi-touch)
+    if (activeTouchId !== null) return;
+    const touch = e.changedTouches[0];
+
+    // ¿El target es un handle del overlay o el propio canvas?
+    const t = e.target;
+    const isHandle = t.classList && (
+      t.classList.contains('sel-handle') ||
+      t.classList.contains('sel-rotate-handle')
+    );
+    const isCanvas = t.tagName === 'CANVAS' && t.id === 'animCanvas';
+
+    if (!isHandle && !isCanvas) return;
+
+    activeTouchId = touch.identifier;
+    touchTarget   = t;
+    e.preventDefault();
+    fireMouse('mousedown', touch, t);
+  }
+
+  function findActiveTouch(touchList) {
+    for (let i = 0; i < touchList.length; i++) {
+      if (touchList[i].identifier === activeTouchId) return touchList[i];
+    }
+    return null;
+  }
+
+  function onTouchMove(e) {
+    if (activeTouchId === null) return;
+    const touch = findActiveTouch(e.changedTouches);
+    if (!touch) return;
+    e.preventDefault();
+    // mousemove se escucha en document, así que disparamos en document
+    fireMouse('mousemove', touch, document);
+  }
+
+  function onTouchEnd(e) {
+    if (activeTouchId === null) return;
+    const touch = findActiveTouch(e.changedTouches);
+    if (!touch) return;
+    e.preventDefault();
+    fireMouse('mouseup', touch, document);
+    activeTouchId = null;
+    touchTarget   = null;
+  }
+
+  // Listeners pasivos en false porque necesitamos preventDefault
+  document.addEventListener('touchstart', onTouchStart, { passive: false });
+  document.addEventListener('touchmove',  onTouchMove,  { passive: false });
+  document.addEventListener('touchend',   onTouchEnd,   { passive: false });
+  document.addEventListener('touchcancel', onTouchEnd,  { passive: false });
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// MOV ALPHA EXPORTER — QuickTime con códec PNG, canal alpha real
+// ═══════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════
+// MOV builder con códec PNG — para alpha real en Premiere Pro
+// Construye un archivo QuickTime/MOV (.mov) válido con PNGs concatenados
+// como samples. Cada sample = 1 PNG con canal alpha intacto.
+// 
+// Estructura derivada de inspección byte-a-byte de un MOV generado por
+// ffmpeg con: ffmpeg -i frame_%04d.png -c:v png -f mov out.mov
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── Helpers de bytes ─────────────────────────────────────────────────
+function _movU8(arr) { return new Uint8Array(arr); }
+function _movU16(v) { return new Uint8Array([(v >> 8) & 0xFF, v & 0xFF]); }
+function _movU32(v) {
+  return new Uint8Array([
+    (v >>> 24) & 0xFF, (v >>> 16) & 0xFF,
+    (v >>> 8) & 0xFF,  v & 0xFF
+  ]);
+}
+function _movStr(s) {
+  const u8 = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+  return u8;
+}
+function _movConcat(arrays) {
+  let total = 0;
+  for (const a of arrays) total += a.length;
+  const out = new Uint8Array(total);
+  let pos = 0;
+  for (const a of arrays) { out.set(a, pos); pos += a.length; }
+  return out;
+}
+
+// Build a box: [size(4)][type(4)][...payload]
+function _movBox(type, payload) {
+  const t = _movStr(type);
+  const size = 8 + payload.length;
+  return _movConcat([_movU32(size), t, payload]);
+}
+
+// Build a full-box: [size(4)][type(4)][version(1)][flags(3)][...payload]
+function _movFullBox(type, version, flags, payload) {
+  const head = new Uint8Array([
+    version & 0xFF,
+    (flags >>> 16) & 0xFF, (flags >>> 8) & 0xFF, flags & 0xFF
+  ]);
+  return _movBox(type, _movConcat([head, payload]));
+}
+
+// ── Cajas individuales ──────────────────────────────────────────────
+
+// ftyp: file type. major_brand="qt  " minor=512 compatible=["qt  "]
+function _movFtyp() {
+  return _movBox('ftyp', _movConcat([
+    _movStr('qt  '),     // major_brand
+    _movU32(512),        // minor_version
+    _movStr('qt  ')      // compatible_brands
+  ]));
+}
+
+// wide: 8-byte placeholder (allows future extension to 64-bit mdat)
+function _movWide() {
+  return _movConcat([_movU32(8), _movStr('wide')]);
+}
+
+// mdat: media data — header + concatenated PNG bytes
+function _movMdat(pngArrays) {
+  let totalData = 0;
+  for (const p of pngArrays) totalData += p.length;
+  const headerSize = 8;
+  const head = _movConcat([_movU32(headerSize + totalData), _movStr('mdat')]);
+  return _movConcat([head, ...pngArrays]);
+}
+
+// mvhd: movie header (version 0, 4-byte times)
+function _movMvhd(timescale, duration) {
+  // 100 bytes payload
+  const matrix = _movConcat([
+    _movU32(0x00010000), _movU32(0), _movU32(0),
+    _movU32(0), _movU32(0x00010000), _movU32(0),
+    _movU32(0), _movU32(0), _movU32(0x40000000)
+  ]);
+  const payload = _movConcat([
+    _movU32(0),               // creation_time
+    _movU32(0),               // modification_time
+    _movU32(timescale),       // timescale (movie-level)
+    _movU32(duration),        // duration (in timescale units)
+    _movU32(0x00010000),      // preferred_rate (1.0)
+    _movU16(0x0100),          // preferred_volume (1.0)
+    new Uint8Array(10),       // reserved (10 bytes)
+    matrix,                   // transformation matrix (9 × 4 bytes)
+    _movU32(0), _movU32(0),   // preview_time, preview_duration
+    _movU32(0), _movU32(0),   // poster_time, selection_time
+    _movU32(0),               // selection_duration
+    _movU32(0),               // current_time
+    _movU32(2)                // next_track_id
+  ]);
+  return _movFullBox('mvhd', 0, 0, payload);
+}
+
+// tkhd: track header
+function _movTkhd(duration, width, height) {
+  const matrix = _movConcat([
+    _movU32(0x00010000), _movU32(0), _movU32(0),
+    _movU32(0), _movU32(0x00010000), _movU32(0),
+    _movU32(0), _movU32(0), _movU32(0x40000000)
+  ]);
+  const payload = _movConcat([
+    _movU32(0),               // creation_time
+    _movU32(0),               // modification_time
+    _movU32(1),               // track_id
+    _movU32(0),               // reserved
+    _movU32(duration),        // duration
+    _movU32(0), _movU32(0),   // reserved (8 bytes)
+    _movU16(0),               // layer
+    _movU16(0),               // alternate_group
+    _movU16(0),               // volume
+    _movU16(0),               // reserved
+    matrix,
+    _movU32(width  << 16),    // width (16.16 fixed point)
+    _movU32(height << 16)     // height
+  ]);
+  // flags = 0x000003 (track_enabled | track_in_movie | track_in_preview)
+  return _movFullBox('tkhd', 0, 0x000003, payload);
+}
+
+// edts > elst: edit list (1 segment covering entire duration)
+function _movEdts(duration) {
+  const elstPayload = _movConcat([
+    _movU32(1),               // entry_count
+    _movU32(duration),        // segment_duration
+    _movU32(0),               // media_time
+    _movU32(0x00010000)       // media_rate (1.0)
+  ]);
+  const elst = _movFullBox('elst', 0, 0, elstPayload);
+  return _movBox('edts', elst);
+}
+
+// mdhd: media header
+function _movMdhd(timescale, duration) {
+  const payload = _movConcat([
+    _movU32(0),               // creation_time
+    _movU32(0),               // modification_time
+    _movU32(timescale),       // timescale (media-level, FPS-related)
+    _movU32(duration),        // duration in timescale units
+    _movU16(0x55C4),          // language ('und' encoded as ISO-639-2)
+    _movU16(0)                // quality
+  ]);
+  return _movFullBox('mdhd', 0, 0, payload);
+}
+
+// hdlr: handler reference
+function _movHdlr(handlerType, name) {
+  const nameU8 = _movStr(name);
+  const payload = _movConcat([
+    _movU32(0),               // component_type (reserved)
+    _movStr(handlerType),     // component_subtype ('vide' or 'url ')
+    _movU32(0), _movU32(0), _movU32(0),  // reserved (3 × 4 bytes)
+    new Uint8Array([nameU8.length]),     // pascal string length prefix
+    nameU8
+  ]);
+  return _movFullBox('hdlr', 0, 0, payload);
+}
+
+// vmhd: video media header
+function _movVmhd() {
+  const payload = _movConcat([
+    _movU16(0),               // graphics_mode
+    _movU16(0), _movU16(0), _movU16(0)   // op_color RGB
+  ]);
+  return _movFullBox('vmhd', 0, 1, payload);
+}
+
+// dref > url
+function _movDref() {
+  // url box with flags=1 (self-contained — data is in the same file)
+  const urlBox = _movFullBox('url ', 0, 1, new Uint8Array(0));
+  const payload = _movConcat([
+    _movU32(1),               // entry_count
+    urlBox
+  ]);
+  return _movFullBox('dref', 0, 0, payload);
+}
+
+function _movDinf() {
+  return _movBox('dinf', _movDref());
+}
+
+// stsd: sample description (defines the PNG format)
+function _movStsd(width, height) {
+  // 32-byte pascal-padded compressor name
+  const compName = 'MotionTypo PNG';
+  const cnU8 = _movStr(compName);
+  const compNameBox = new Uint8Array(32);
+  compNameBox[0] = Math.min(cnU8.length, 31);
+  for (let i = 0; i < Math.min(cnU8.length, 31); i++) compNameBox[i+1] = cnU8[i];
+
+  // 'fiel' (field handling) sub-box: progressive single field
+  const fiel = _movBox('fiel', new Uint8Array([1, 0]));
+
+  const sampleEntry = _movConcat([
+    new Uint8Array(6),        // reserved (6 bytes)
+    _movU16(1),               // data_reference_index
+    _movU16(0),               // version (sample entry)
+    _movU16(0),               // revision_level
+    _movStr('Mtyp'),          // vendor
+    _movU32(512),             // temporal_quality
+    _movU32(512),             // spatial_quality
+    _movU16(width),
+    _movU16(height),
+    _movU32(0x00480000),      // horiz_res 72 dpi
+    _movU32(0x00480000),      // vert_res 72 dpi
+    _movU32(0),               // data_size
+    _movU16(1),               // frame_count
+    compNameBox,              // 32-byte compressor name
+    _movU16(32),              // depth (32 = RGBA, alpha!)
+    _movU16(0xFFFF),          // color_table_id (-1 = no CLUT)
+    fiel
+  ]);
+
+  // Wrap as sample entry: size(4) + format(4) + body
+  const entryFull = _movConcat([
+    _movU32(8 + sampleEntry.length),
+    _movStr('png '),
+    sampleEntry
+  ]);
+
+  const payload = _movConcat([
+    _movU32(1),               // entry_count
+    entryFull
+  ]);
+  return _movFullBox('stsd', 0, 0, payload);
+}
+
+// stts: time-to-sample. One entry: N samples with delta = mediaTimescale/fps
+function _movStts(sampleCount, sampleDelta) {
+  const payload = _movConcat([
+    _movU32(1),               // entry_count
+    _movU32(sampleCount),
+    _movU32(sampleDelta)
+  ]);
+  return _movFullBox('stts', 0, 0, payload);
+}
+
+// stsc: all samples in one chunk
+function _movStsc(sampleCount) {
+  const payload = _movConcat([
+    _movU32(1),               // entry_count
+    _movU32(1),               // first_chunk
+    _movU32(sampleCount),     // samples_per_chunk
+    _movU32(1)                // sample_description_index
+  ]);
+  return _movFullBox('stsc', 0, 0, payload);
+}
+
+// stsz: variable sample sizes (one per PNG)
+function _movStsz(pngSizes) {
+  const sizesU8 = [];
+  for (const sz of pngSizes) sizesU8.push(_movU32(sz));
+  const payload = _movConcat([
+    _movU32(0),               // sample_size (0 means variable, see entries)
+    _movU32(pngSizes.length), // sample_count
+    ...sizesU8
+  ]);
+  return _movFullBox('stsz', 0, 0, payload);
+}
+
+// stco: single chunk offset (where first PNG starts in file)
+function _movStco(chunkOffset) {
+  const payload = _movConcat([
+    _movU32(1),               // entry_count
+    _movU32(chunkOffset)
+  ]);
+  return _movFullBox('stco', 0, 0, payload);
+}
+
+function _movStbl(width, height, sampleCount, sampleDelta, pngSizes, chunkOffset) {
+  return _movBox('stbl', _movConcat([
+    _movStsd(width, height),
+    _movStts(sampleCount, sampleDelta),
+    _movStsc(sampleCount),
+    _movStsz(pngSizes),
+    _movStco(chunkOffset)
+  ]));
+}
+
+function _movMinf(width, height, sampleCount, sampleDelta, pngSizes, chunkOffset) {
+  return _movBox('minf', _movConcat([
+    _movVmhd(),
+    _movHdlr('url ', 'DataHandler'),
+    _movDinf(),
+    _movStbl(width, height, sampleCount, sampleDelta, pngSizes, chunkOffset)
+  ]));
+}
+
+function _movMdia(width, height, mediaTimescale, mediaDuration, sampleCount, sampleDelta, pngSizes, chunkOffset) {
+  return _movBox('mdia', _movConcat([
+    _movMdhd(mediaTimescale, mediaDuration),
+    _movHdlr('vide', 'VideoHandler'),
+    _movMinf(width, height, sampleCount, sampleDelta, pngSizes, chunkOffset)
+  ]));
+}
+
+function _movTrak(width, height, movieDuration, mediaTimescale, mediaDuration, sampleCount, sampleDelta, pngSizes, chunkOffset) {
+  return _movBox('trak', _movConcat([
+    _movTkhd(movieDuration, width, height),
+    _movEdts(movieDuration),
+    _movMdia(width, height, mediaTimescale, mediaDuration, sampleCount, sampleDelta, pngSizes, chunkOffset)
+  ]));
+}
+
+function _movMoov(width, height, movieTimescale, movieDuration, mediaTimescale, mediaDuration, sampleCount, sampleDelta, pngSizes, chunkOffset) {
+  return _movBox('moov', _movConcat([
+    _movMvhd(movieTimescale, movieDuration),
+    _movTrak(width, height, movieDuration, mediaTimescale, mediaDuration, sampleCount, sampleDelta, pngSizes, chunkOffset)
+  ]));
+}
+
+// ── API pública: construir MOV completo ─────────────────────────────
+function buildMovPng(pngBlobs, width, height, fps) {
+  // pngBlobs: array de Uint8Array, cada uno un PNG completo
+  if (!pngBlobs.length) throw new Error('No frames');
+
+  const sampleCount = pngBlobs.length;
+  const movieTimescale = 1000;
+  const mediaTimescale = fps * 1000;          // p.ej. fps=30 -> 30000
+  const sampleDelta    = 1000;                // 1 frame = 1000 ticks @ mediaTimescale (mediaTimescale/fps = 1000)
+  const mediaDuration  = sampleCount * sampleDelta;
+  const movieDuration  = Math.round(sampleCount / fps * movieTimescale);
+
+  const pngSizes = pngBlobs.map(p => p.length);
+
+  // Calcular dónde empezará mdat exactamente:
+  // ftyp(20) + wide(8) + mdat_header(8) = 36
+  const chunkOffset = 36;
+
+  // Construir las piezas en orden
+  const ftyp = _movFtyp();
+  const wide = _movWide();
+  const mdat = _movMdat(pngBlobs);
+  const moov = _movMoov(width, height, movieTimescale, movieDuration,
+                         mediaTimescale, mediaDuration, sampleCount, sampleDelta,
+                         pngSizes, chunkOffset);
+
+  return _movConcat([ftyp, wide, mdat, moov]);
+}
+
+
+// ── Render del canvas a PNG con alpha por frame ──────────────────────
+function _movCanvasToPng(canvasEl) {
+  return new Promise((resolve, reject) => {
+    canvasEl.toBlob((blob) => {
+      if (!blob) { reject(new Error('toBlob falló')); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve(new Uint8Array(reader.result));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsArrayBuffer(blob);
+    }, 'image/png');
+  });
+}
+
+// ── Estimar tamaño aproximado del MOV ────────────────────────────────
+function _movUpdateEstimate() {
+  const fps = parseInt(document.getElementById('movFps')?.value || '30', 10);
+  const duration = parseFloat(document.getElementById('durationRange')?.value || '4');
+  const frames = Math.round(duration * fps);
+  // Estimación muy aproximada: ~0.1-0.3 KB/píxel/frame para PNG con alpha realista
+  // Para diseños de tipografía limpios suele estar entre 10-40 KB/frame en 1080p
+  const px = (canvasW * canvasH) / 1000;
+  const kbPerFrame = px * 0.025; // factor empírico conservador
+  const estimateMB = (kbPerFrame * frames) / 1024;
+  const est = document.getElementById('movEstimate');
+  if (est) {
+    est.textContent = `Estimación: ~${estimateMB.toFixed(1)} MB (${frames} frames @ ${canvasW}×${canvasH})`;
+  }
+}
+
+// ── Exportar MOV Alpha ───────────────────────────────────────────────
+async function exportMovAlpha() {
+  if (typeof isRecording !== 'undefined' && isRecording) {
+    showToast('⚠ Otra exportación en curso');
+    return;
+  }
+
+  const fps = parseInt(document.getElementById('movFps').value, 10);
+  const duration = parseFloat(document.getElementById('durationRange').value);
+  const totalFrames = Math.round(duration * fps);
+  const btn = document.getElementById('exportMovAlphaBtn');
+  const status = document.getElementById('statusTag');
+
+  // Forzar fondo transparente durante la captura
+  const prevTransp = document.getElementById('transparentBg').checked;
+  document.getElementById('transparentBg').checked = true;
+
+  // Detener loop de animación normal
+  if (typeof animLoop !== 'undefined' && animLoop) { cancelAnimationFrame(animLoop); animLoop = null; }
+
+  isRecording = true;
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = '🎞 Capturando frames…';
+  expProgressShow('movalpha', 'Iniciando captura...');
+
+  try {
+    // Canvas off-screen para capturar con alpha limpio
+    const captureCanvas = document.createElement('canvas');
+    captureCanvas.width  = canvasW;
+    captureCanvas.height = canvasH;
+    const captureCtx = captureCanvas.getContext('2d', { alpha: true });
+
+    const pngs = [];
+    for (let i = 0; i < totalFrames; i++) {
+      drawFrame(i / totalFrames);
+      captureCtx.clearRect(0, 0, canvasW, canvasH);
+      captureCtx.drawImage(canvas, 0, 0);
+      const png = await _movCanvasToPng(captureCanvas);
+      pngs.push(png);
+      if (i % 3 === 0) {
+        const pct = Math.round((i / totalFrames) * 90); // 90% para captura
+        if (status) status.textContent = `🎞 Capturando ${pct}%`;
+        expProgressSet('movalpha', pct, 'Capturando frames');
+      }
+      // FIX M2: yield al main thread cada 10 frames para que la UI
+      // siga respondiendo (progress bar, scrubbing, cancelación).
+      // setTimeout(0) cede el control al event loop una vez.
+      if (i % 10 === 9) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+
+    if (status) status.textContent = '🎞 Empaquetando MOV…';
+    expProgressSet('movalpha', 95, 'Empaquetando MOV');
+    await new Promise(r => setTimeout(r, 50));
+
+    const mov = buildMovPng(pngs, canvasW, canvasH, fps);
+    const blob = new Blob([mov], { type: 'video/quicktime' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `motiontypo_${canvasW}x${canvasH}_${fps}fps_alpha.mov`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+    const sizeMB = (mov.length / (1024 * 1024)).toFixed(2);
+    if (status) status.textContent = `✅ MOV α ${sizeMB} MB (${canvasW}×${canvasH})`;
+    expProgressDone('movalpha', `MOV α ${sizeMB} MB descargado`);
+    showToast(`✓ MOV alpha generado (${sizeMB} MB)`);
+
+    // ─── FIX M1: liberación explícita de memoria ────────────────────
+    // Vaciar el array de PNGs (cada uno puede ser 100KB-3MB → 100s MB total)
+    pngs.length = 0;
+    // Liberar el canvas off-screen (libera memoria GPU)
+    captureCanvas.width = 0;
+    captureCanvas.height = 0;
+    // Ayudar al GC marcando referencias como null (variables locales, no afecta nada)
+    // Las variables salen de scope al terminar la función igual, pero
+    // forzarlas aquí libera memoria antes del setTimeout del URL revoke.
+  } catch (err) {
+    console.error('exportMovAlpha error:', err);
+    if (status) status.textContent = '❌ Error en MOV α';
+    expProgressError('movalpha', err.message || 'Error en MOV α');
+    showToast('Error: ' + (err.message || err));
+  } finally {
+    document.getElementById('transparentBg').checked = prevTransp;
+    isRecording = false;
+    if (btn) btn.disabled = false;
+    if (typeof startPreview === 'function') startPreview();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const exportBtn = document.getElementById('exportMovAlphaBtn');
+  if (exportBtn) exportBtn.addEventListener('click', exportMovAlpha);
+
+  // Actualizar estimación al cambiar fps o duración
+  const fpsSel = document.getElementById('movFps');
+  const durRange = document.getElementById('durationRange');
+  if (fpsSel) fpsSel.addEventListener('change', _movUpdateEstimate);
+  if (durRange) durRange.addEventListener('input', _movUpdateEstimate);
+
+  // Cuando se abre el modal o se cambia el tab MOV, refrescar estimación
+  document.querySelectorAll('.export-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.dataset.target === 'movalpha') {
+        setTimeout(_movUpdateEstimate, 30);
+      }
+    });
+  });
+});
+</script>
+<script>
+// ─── Configuración global: efectos sombra y glow ───
+function _updateGlobalEffectPanels() {
+  const eff = document.getElementById('extraEffect')?.value || 'none';
+  const sp = document.getElementById('shadowParams');
+  const gp = document.getElementById('glowParams');
+  if (sp) sp.style.display = (eff === 'shadow') ? 'block' : 'none';
+  if (gp) gp.style.display = (eff === 'glowStroke') ? 'block' : 'none';
+}
+function _wireSliderLabel(sliderId, labelId, fmt) {
+  const s = document.getElementById(sliderId);
+  const l = document.getElementById(labelId);
+  if (!s || !l) return;
+  const update = () => { l.textContent = fmt(s.value); if (typeof scheduleRefresh === 'function') scheduleRefresh(); };
+  s.addEventListener('input', update);
+  update();
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('extraEffect')?.addEventListener('change', _updateGlobalEffectPanels);
+  _updateGlobalEffectPanels();
+  _wireSliderLabel('shadowOpacity', 'shadowOpacityVal', v => v + '%');
+  _wireSliderLabel('shadowDx',      'shadowDxVal',      v => v + ' px');
+  _wireSliderLabel('shadowDy',      'shadowDyVal',      v => v + ' px');
+  _wireSliderLabel('shadowBlur',    'shadowBlurVal',    v => v + ' px');
+  _wireSliderLabel('glowIntensity', 'glowIntensityVal', v => v + '%');
+  _wireSliderLabel('glowSize',      'glowSizeVal',      v => v + ' px');
+  ['shadowColor','glowColor','glowUseFill'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    ['input','change'].forEach(ev => el.addEventListener(ev, () => {
+      if (typeof scheduleRefresh === 'function') scheduleRefresh();
+    }));
+  });
+});
+</script>
+
+<script>
+// ─── PROGRESS BARS UNIVERSAL ──────────────────────────────────────
+// Cada pane de exportar tiene una barra .exp-progress que se controla con
+// estas funciones globales. Pasas el id del pane y el % o "indeterminate".
+
+function expProgressShow(paneKey, label) {
+  const el = document.getElementById('expProgress_' + paneKey);
+  if (!el) return;
+  el.classList.add('active');
+  const bar = el.querySelector('.exp-progress-bar-fill');
+  const lab = el.querySelector('.exp-progress-label');
+  if (bar) { bar.style.width = '0%'; bar.classList.remove('indeterminate'); }
+  if (lab) lab.innerHTML = label || 'Procesando…';
+}
+function expProgressSet(paneKey, pct, label) {
+  const el = document.getElementById('expProgress_' + paneKey);
+  if (!el) return;
+  el.classList.add('active');
+  const bar = el.querySelector('.exp-progress-bar-fill');
+  const lab = el.querySelector('.exp-progress-label');
+  if (bar) {
+    bar.classList.remove('indeterminate');
+    bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+  }
+  if (lab) lab.innerHTML = (label || 'Procesando') + ' <span class="pct">' + Math.round(pct) + '%</span>';
+}
+function expProgressIndeterminate(paneKey, label) {
+  const el = document.getElementById('expProgress_' + paneKey);
+  if (!el) return;
+  el.classList.add('active');
+  const bar = el.querySelector('.exp-progress-bar-fill');
+  const lab = el.querySelector('.exp-progress-label');
+  if (bar) bar.classList.add('indeterminate');
+  if (lab) lab.innerHTML = label || 'Procesando…';
+}
+function expProgressDone(paneKey, label) {
+  const el = document.getElementById('expProgress_' + paneKey);
+  if (!el) return;
+  const bar = el.querySelector('.exp-progress-bar-fill');
+  const lab = el.querySelector('.exp-progress-label');
+  if (bar) { bar.classList.remove('indeterminate'); bar.style.width = '100%'; }
+  if (lab) lab.innerHTML = '<span style="color:var(--accent3);">✓</span> ' + (label || 'Completado');
+  setTimeout(() => { el.classList.remove('active'); }, 1800);
+}
+function expProgressError(paneKey, label) {
+  const el = document.getElementById('expProgress_' + paneKey);
+  if (!el) return;
+  const bar = el.querySelector('.exp-progress-bar-fill');
+  const lab = el.querySelector('.exp-progress-label');
+  if (bar) { bar.classList.remove('indeterminate'); bar.style.background = 'var(--red, #c44)'; }
+  if (lab) lab.innerHTML = '<span style="color:#c44;">✗</span> ' + (label || 'Error');
+  setTimeout(() => {
+    el.classList.remove('active');
+    if (bar) bar.style.background = '';
+  }, 3000);
+}
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// FASE 4 — Gestos en canvas: zoom (pinch/wheel), pan (2 dedos), doble tap
+// ═══════════════════════════════════════════════════════════════════════
+(function() {
+  const wrap     = document.querySelector('.canvas-wrap');
+  const inner    = document.getElementById('canvasZoomInner');
+  const indicator= document.getElementById('zoomIndicator');
+  const resetBtn = document.getElementById('zoomResetBtn');
+  if (!wrap || !inner) return;
+
+  // ── Estado del zoom/pan ─────────────────────────────────────────
+  const ZOOM_MIN = 0.25;
+  const ZOOM_MAX = 3.0;
+  let zoom = 1;
+  let panX = 0, panY = 0;
+  let indicatorTimer = null;
+
+  function applyTransform(animate) {
+    if (animate === false) inner.classList.add('no-anim');
+    else inner.classList.remove('no-anim');
+    inner.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    updateUI();
+  }
+
+  function updateUI() {
+    const pct = Math.round(zoom * 100);
+    if (indicator) {
+      indicator.textContent = pct + '%';
+      indicator.classList.add('visible');
+      clearTimeout(indicatorTimer);
+      indicatorTimer = setTimeout(() => indicator.classList.remove('visible'), 900);
+    }
+    if (resetBtn) {
+      if (Math.abs(zoom - 1) > 0.001 || Math.abs(panX) > 1 || Math.abs(panY) > 1) {
+        resetBtn.classList.add('visible');
+        resetBtn.textContent = '⊙ ' + pct + '%';
+      } else {
+        resetBtn.classList.remove('visible');
+      }
+    }
+  }
+
+  function clampZoom(z) { return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)); }
+
+  function resetZoom() {
+    zoom = 1; panX = 0; panY = 0;
+    applyTransform(true);
+  }
+
+  if (resetBtn) resetBtn.addEventListener('click', resetZoom);
+
+  // ── Zoom desktop: Ctrl/Cmd + rueda ──────────────────────────────
+  // Sin Ctrl, el navegador hace scroll normal — no interfiere
+  wrap.addEventListener('wheel', (e) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const oldZoom = zoom;
+    // Delta proporcional al zoom actual para que se sienta natural a cualquier escala
+    const delta = -e.deltaY * 0.0015 * oldZoom;
+    const newZoom = clampZoom(oldZoom + delta);
+    if (newZoom === oldZoom) return;
+
+    // Zoom hacia el punto del cursor: ajustar pan para que el punto
+    // bajo el cursor se mantenga en la misma posición visual
+    const rect = wrap.getBoundingClientRect();
+    const cx = e.clientX - rect.left - rect.width / 2;
+    const cy = e.clientY - rect.top  - rect.height / 2;
+    const ratio = newZoom / oldZoom;
+    panX = cx - (cx - panX) * ratio;
+    panY = cy - (cy - panY) * ratio;
+    zoom = newZoom;
+    applyTransform(false);
+  }, { passive: false });
+
+  // ── Pan desktop: arrastre con click medio o con espacio ─────────
+  let spaceDown = false;
+  let panning = false;
+  let panStartX = 0, panStartY = 0, panStartPanX = 0, panStartPanY = 0;
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && document.activeElement?.tagName !== 'TEXTAREA' && document.activeElement?.tagName !== 'INPUT') {
+      spaceDown = true;
+      wrap.style.cursor = 'grab';
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+      spaceDown = false;
+      if (!panning) wrap.style.cursor = '';
+    }
+  });
+
+  wrap.addEventListener('mousedown', (e) => {
+    if (e.button === 1 || (e.button === 0 && spaceDown)) {
+      panning = true;
+      panStartX = e.clientX; panStartY = e.clientY;
+      panStartPanX = panX; panStartPanY = panY;
+      wrap.style.cursor = 'grabbing';
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true); // capture phase para llegar antes que los drags del canvas
+
+  window.addEventListener('mousemove', (e) => {
+    if (!panning) return;
+    panX = panStartPanX + (e.clientX - panStartX);
+    panY = panStartPanY + (e.clientY - panStartY);
+    applyTransform(false);
+  });
+  window.addEventListener('mouseup', () => {
+    if (panning) {
+      panning = false;
+      wrap.style.cursor = spaceDown ? 'grab' : '';
+    }
+  });
+
+  // ── Pinch + pan táctil (2 dedos) ────────────────────────────────
+  // Se procesa SOLO si hay 2 dedos. Con 1 dedo el polyfill táctil
+  // existente sigue manejando drag/select normalmente.
+  let pinchActive = false;
+  let pinchStartDist = 0, pinchStartZoom = 1;
+  let pinchStartCenterX = 0, pinchStartCenterY = 0;
+  let pinchStartPanX = 0, pinchStartPanY = 0;
+
+  function getPinchData(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const cx = (touches[0].clientX + touches[1].clientX) / 2;
+    const cy = (touches[0].clientY + touches[1].clientY) / 2;
+    return { dist, cx, cy };
+  }
+
+  wrap.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchActive = true;
+      const d = getPinchData(e.touches);
+      pinchStartDist = d.dist;
+      pinchStartZoom = zoom;
+      pinchStartCenterX = d.cx;
+      pinchStartCenterY = d.cy;
+      pinchStartPanX = panX;
+      pinchStartPanY = panY;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { passive: false, capture: true });
+
+  wrap.addEventListener('touchmove', (e) => {
+    if (!pinchActive || e.touches.length !== 2) return;
+    const d = getPinchData(e.touches);
+    const scale = d.dist / pinchStartDist;
+    const newZoom = clampZoom(pinchStartZoom * scale);
+    // Pan: mover el viewport siguiendo el centro de los dos dedos
+    const rect = wrap.getBoundingClientRect();
+    const startCxRel = pinchStartCenterX - rect.left - rect.width / 2;
+    const startCyRel = pinchStartCenterY - rect.top  - rect.height / 2;
+    const ratio = newZoom / pinchStartZoom;
+    const basePanX = startCxRel - (startCxRel - pinchStartPanX) * ratio;
+    const basePanY = startCyRel - (startCyRel - pinchStartPanY) * ratio;
+    panX = basePanX + (d.cx - pinchStartCenterX);
+    panY = basePanY + (d.cy - pinchStartCenterY);
+    zoom = newZoom;
+    applyTransform(false);
+    e.preventDefault();
+    e.stopPropagation();
+  }, { passive: false, capture: true });
+
+  wrap.addEventListener('touchend', (e) => {
+    if (pinchActive && e.touches.length < 2) {
+      pinchActive = false;
+    }
+  }, { capture: true });
+
+  // ── Doble tap / doble click sobre texto → enfoca textarea de Props ─
+  const canvas = document.getElementById('animCanvas');
+
+  function focusTextPropsForLayer(lineId) {
+    // Seleccionar la capa programáticamente si no está seleccionada
+    if (typeof selectedObjId === 'undefined' || selectedObjId !== lineId) {
+      if (typeof selectObject === 'function') {
+        selectObject(lineId, 'text');
+      } else if (typeof selectLine === 'function') {
+        selectLine(lineId);
+      } else {
+      }
+    } else {
+    }
+    // En móvil cambiar a la tab Props
+    const appBody = document.querySelector('.app-body');
+    if (appBody && window.innerWidth <= 900) {
+      const propsTab = document.querySelector('.mobile-tab[data-mobile-target="props"]');
+      if (propsTab) {
+        propsTab.click();
+      }
+    }
+    // Esperar a que el panel Props renderice, luego enfocar el textarea
+    setTimeout(() => {
+      const propsArea = document.querySelector('.props-panel');
+      const allTextareas = document.querySelectorAll('.props-panel textarea');
+      const ppText = document.querySelector('.props-panel .pp-text');
+      if (ppText) {
+        ppText.focus();
+        ppText.select();
+      } else if (allTextareas.length > 0) {
+        // fallback: enfocar el primer textarea
+        allTextareas[0].focus();
+        allTextareas[0].select();
+      }
+    }, 120);
+  }
+
+  // Hit-test inline: replicamos la lógica del hitTest interno para textos.
+  function findTextLayerAt(clientX, clientY) {
+    if (typeof lines === 'undefined' || !lines.length) return null;
+    if (typeof canvasW === 'undefined' || typeof ctx === 'undefined') return null;
+    const rect = canvas.getBoundingClientRect();
+    const sx = canvasW / rect.width;
+    const sy = canvasH / rect.height;
+    const cx = (clientX - rect.left) * sx;
+    const cy = (clientY - rect.top)  * sy;
+    // Recorrer en orden inverso de pintado (capa superior primero)
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (!line || !line.params) continue;
+      const p = line.params;
+      const fs = p.fontSizePx || 44;
+      const weight = p.fontWeight || '400';
+      const italic = p.fontItalic ? 'italic' : 'normal';
+      ctx.font = `${italic} ${weight} ${fs}px ${p.fontFamily || 'sans-serif'}`;
+      const rawLines = String(p.text || '').split('\n');
+      const maxW = Math.max(...rawLines.map(l => ctx.measureText(l).width), 1);
+      const lh = fs * (p.lineHeight || 1.2);
+      const totalH = lh * rawLines.length;
+      const align = p.align || 'left';
+      let bx = p.x;
+      if (align === 'center') bx = p.x - maxW / 2;
+      else if (align === 'right') bx = p.x - maxW;
+      const pad = 8;
+      const bboxLeft   = bx - pad;
+      const bboxRight  = bx + maxW + pad;
+      const bboxTop    = p.y - fs - pad;
+      const bboxBottom = p.y + totalH + pad;
+      if (cx >= bboxLeft && cx <= bboxRight &&
+          cy >= bboxTop  && cy <= bboxBottom) {
+        return line.id;
+      }
+    }
+    return null;
+  }
+
+  // Desktop: dblclick — instrumentado con logs
+  canvas.addEventListener('dblclick', (e) => {
+    const lineId = findTextLayerAt(e.clientX, e.clientY);
+    if (lineId != null) {
+      e.preventDefault();
+      focusTextPropsForLayer(lineId);
+    } else {
+    }
+  });
+
+  // Móvil: detectar doble tap manualmente (300ms entre toques en el mismo punto)
+  let lastTapTime = 0;
+  let lastTapX = 0, lastTapY = 0;
+  canvas.addEventListener('touchend', (e) => {
+    if (e.changedTouches.length !== 1) return;
+    if (pinchActive) return;
+    const t = e.changedTouches[0];
+    const now = Date.now();
+    const dx = Math.abs(t.clientX - lastTapX);
+    const dy = Math.abs(t.clientY - lastTapY);
+    if (now - lastTapTime < 300 && dx < 30 && dy < 30) {
+      // doble tap detectado
+      const lineId = findTextLayerAt(t.clientX, t.clientY);
+      if (lineId != null) {
+        e.preventDefault();
+        focusTextPropsForLayer(lineId);
+      }
+      lastTapTime = 0; // reset para evitar triple-tap
+    } else {
+      lastTapTime = now;
+      lastTapX = t.clientX;
+      lastTapY = t.clientY;
+    }
+  }, { passive: false });
+
+  // Init
+  applyTransform(true);
+})();
 </script>
 </body>
 </html>
